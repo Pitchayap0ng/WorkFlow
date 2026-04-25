@@ -3,140 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WorkFlow Pro</title>
+    <title>CleanFlow Pro</title>
 
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="WorkFlow">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3551/3551628.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;500;700&display=swap');
-        
-        :root { --accent: #6366f1; }
         body { 
             font-family: 'Anuphan', sans-serif; 
-            -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            background-color: #000;
-            color: #fff;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-            position: fixed;
+            background-color: #000; color: #fff;
+            margin: 0; overflow: hidden; height: 100vh;
         }
-
-        /* ปรับแต่งส่วนที่ติดขอบ Notch ของ iPhone */
-        header { padding-top: env(safe-area-inset-top); }
-        nav { padding-bottom: env(safe-area-inset-bottom); }
-
-        .page { display: none; height: 100%; overflow-y: auto; padding-bottom: 120px; }
-        .page.active { display: block; animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .ios-card {
-            background: rgba(28, 28, 30, 0.8);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
+        .page { display: none; height: 100vh; overflow-y: auto; padding-bottom: 120px; }
+        .page.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .ios-card { background: rgba(28, 28, 30, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 2rem; }
+        nav { z-index: 9999 !important; }
+        * { -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
-<body>
+<body class="antialiased">
 
-    <header class="p-8 pb-4">
-        <div class="flex justify-between items-end">
-            <div>
-                <p class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Net Salary (Estimated)</p>
-                <h1 class="text-4xl font-light">฿<span id="netSalary" class="font-bold">0.00</span></h1>
-            </div>
-            <div class="text-right">
-                <p id="currentMonthText" class="text-xs font-bold text-indigo-400 uppercase tracking-tighter"></p>
-            </div>
-        </div>
-    </header>
+    <main id="main-content" class="pt-[env(safe-area-inset-top)] px-6">
+        
+        <section id="page-home" class="page active space-y-6 pt-10">
+            <header class="mb-8">
+                <p class="text-[10px] font-bold opacity-40 uppercase tracking-widest">Net Salary</p>
+                <h1 class="text-4xl font-bold">฿<span id="salaryDisplay">0.00</span></h1>
+            </header>
 
-    <main class="px-6 h-full">
-        <section id="home" class="page active space-y-6">
             <div class="grid grid-cols-2 gap-4">
-                <button onclick="handleCheckIn()" class="h-40 rounded-[2.5rem] bg-indigo-600 text-white flex flex-col items-center justify-center gap-3 active:scale-95 transition-all shadow-2xl shadow-indigo-500/30">
-                    <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-                        <i class="fa-solid fa-sign-in-alt text-xl"></i>
-                    </div>
-                    <span class="text-[10px] font-black uppercase tracking-widest">Check In</span>
+                <button onclick="checkIn()" class="h-44 ios-card bg-indigo-600 border-none flex flex-col items-center justify-center gap-3 active:scale-95 transition-all">
+                    <i class="fa-solid fa-bolt text-2xl"></i>
+                    <span class="text-xs font-bold uppercase">Check In</span>
                 </button>
-                <button onclick="handleCheckOut()" class="h-40 rounded-[2.5rem] ios-card text-zinc-300 flex flex-col items-center justify-center gap-3 active:scale-95 transition-all">
-                    <div class="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center">
-                        <i class="fa-solid fa-sign-out-alt text-xl"></i>
-                    </div>
-                    <span class="text-[10px] font-black uppercase tracking-widest opacity-60">Check Out</span>
+                <button onclick="checkOut()" class="h-44 ios-card flex flex-col items-center justify-center gap-3 active:scale-95 transition-all">
+                    <i class="fa-solid fa-moon text-2xl opacity-40"></i>
+                    <span class="text-xs font-bold uppercase opacity-40">Check Out</span>
                 </button>
             </div>
 
-            <div class="grid grid-cols-3 gap-3">
-                <div class="ios-card p-4 rounded-3xl text-center">
-                    <p class="text-[9px] opacity-40 uppercase font-bold">Days</p>
-                    <p id="statDays" class="text-lg font-bold">0</p>
-                </div>
-                <div class="ios-card p-4 rounded-3xl text-center">
-                    <p class="text-[9px] opacity-40 uppercase font-bold">OT (Hrs)</p>
-                    <p id="statOT" class="text-lg font-bold text-indigo-400">0</p>
-                </div>
-                <div class="ios-card p-4 rounded-3xl text-center">
-                    <p class="text-[9px] opacity-40 uppercase font-bold">Late (Min)</p>
-                    <p id="statLate" class="text-lg font-bold text-rose-500">0</p>
-                </div>
-            </div>
+            <div id="historyList" class="space-y-3"></div>
+        </section>
 
-            <div class="space-y-4">
-                <p class="text-[10px] font-bold uppercase tracking-widest opacity-30 px-2">History</p>
-                <div id="attendanceList" class="space-y-3"></div>
+        <section id="page-stats" class="page space-y-6 pt-10">
+            <h2 class="text-2xl font-bold">Statistics</h2>
+            <div class="ios-card p-6">
+                <canvas id="myChart" style="width:100%; max-height:200px;"></canvas>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="ios-card p-4 text-center">
+                    <p class="text-[10px] opacity-40 uppercase">Late (Min)</p>
+                    <p id="totalLate" class="text-xl font-bold text-rose-500">0</p>
+                </div>
+                <div class="ios-card p-4 text-center">
+                    <p class="text-[10px] opacity-40 uppercase">OT (Hrs)</p>
+                    <p id="totalOT" class="text-xl font-bold text-indigo-400">0</p>
+                </div>
             </div>
         </section>
 
-        <section id="settings" class="page space-y-6">
-            <h2 class="text-2xl font-bold px-2">Settings</h2>
-            <div class="ios-card p-6 rounded-[2.5rem] space-y-6">
+        <section id="page-settings" class="page space-y-6 pt-10">
+            <h2 class="text-2xl font-bold">Settings</h2>
+            <div class="ios-card p-6 space-y-6">
                 <div>
-                    <label class="text-[10px] font-bold opacity-30 uppercase tracking-widest">Monthly Base Salary</label>
-                    <input type="number" id="baseSalary" onchange="saveSets()" class="w-full bg-transparent text-2xl font-bold border-b border-zinc-800 py-3 focus:outline-none focus:border-indigo-500 transition-colors">
+                    <label class="text-[10px] font-bold opacity-30 uppercase">Monthly Salary</label>
+                    <input type="number" id="baseSalary" onchange="updateSets()" class="w-full bg-transparent text-xl font-bold border-b border-white/10 py-2 outline-none">
                 </div>
-                <div class="grid grid-cols-2 gap-8">
+                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="text-[10px] font-bold opacity-30 uppercase tracking-widest">Shift Start</label>
-                        <input type="time" id="stdStart" onchange="saveSets()" class="w-full bg-transparent text-xl py-3 focus:outline-none">
+                        <label class="text-[10px] font-bold opacity-30 uppercase">Start Time</label>
+                        <input type="time" id="startTime" onchange="updateSets()" class="w-full bg-transparent text-lg py-2 outline-none">
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold opacity-30 uppercase tracking-widest">Shift End</label>
-                        <input type="time" id="stdEnd" onchange="saveSets()" class="w-full bg-transparent text-xl py-3 focus:outline-none">
+                        <label class="text-[10px] font-bold opacity-30 uppercase">End Time</label>
+                        <input type="time" id="endTime" onchange="updateSets()" class="w-full bg-transparent text-lg py-2 outline-none">
                     </div>
                 </div>
             </div>
-            <p class="text-center text-[10px] opacity-20">WorkFlow iOS v2.0 • Offline Ready</p>
         </section>
+
     </main>
 
-    <nav class="fixed bottom-10 left-1/2 -translate-x-1/2 ios-card px-3 py-3 rounded-full flex gap-2 shadow-2xl z-50">
-        <button onclick="showPage('home', this)" class="w-14 h-14 rounded-full bg-indigo-600 text-white transition-all duration-300">
-            <i class="fa-solid fa-clock-rotate-left"></i>
-        </button>
-        <button onclick="showPage('settings', this)" class="w-14 h-14 rounded-full text-zinc-500 transition-all duration-300">
-            <i class="fa-solid fa-sliders"></i>
-        </button>
+    <nav class="fixed bottom-10 left-6 right-6 ios-card p-2 flex justify-around items-center shadow-2xl">
+        <button onclick="switchPage('page-home', this)" class="p-4 text-indigo-500 transition-all"><i class="fa-solid fa-house"></i></button>
+        <button onclick="switchPage('page-stats', this)" class="p-4 text-zinc-500 transition-all"><i class="fa-solid fa-chart-pie"></i></button>
+        <button onclick="switchPage('page-settings', this)" class="p-4 text-zinc-500 transition-all"><i class="fa-solid fa-gear"></i></button>
     </nav>
 
     <script>
-        // --- 1. Firebase & Setup ---
+        // --- Configuration ---
         const firebaseConfig = {
             apiKey: "AIzaSyA11zPbXEFs-sdIHKaxhkprkoGSGP1whfg",
             authDomain: "ims-fei.firebaseapp.com",
@@ -146,126 +112,98 @@
             messagingSenderId: "791711191329",
             appId: "1:791711191329:web:0a4ba03cd5f11eb71bae60"
         };
-
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        db.ref('attendance').keepSynced(true); // Offline Support
 
-        let logs = JSON.parse(localStorage.getItem('wf_cache')) || [];
-        let sets = JSON.parse(localStorage.getItem('wf_sets')) || { salary: 15000, start: "08:30", end: "17:30" };
+        let logs = [];
+        let sets = JSON.parse(localStorage.getItem('cf_sets')) || { salary: 15000, start: "08:30", end: "17:30" };
+        let chart = null;
 
-        // --- 2. Core Functions ---
-
+        // --- Logic ---
         db.ref('attendance').on('value', snap => {
             const val = snap.val();
-            logs = val ? Object.keys(val).map(id => ({ id, ...val[id] })) : [];
+            logs = val ? Object.keys(val).map(id => ({id, ...val[id]})) : [];
             logs.sort((a,b) => new Date(b.date) - new Date(a.date));
-            localStorage.setItem('wf_cache', JSON.stringify(logs));
             render();
         });
 
-        function handleCheckIn() {
+        function checkIn() {
             const d = new Date(), date = d.toISOString().split('T')[0], time = d.toTimeString().slice(0,5);
-            if(logs.find(l => l.date === date)) return Swal.fire({title: "Already Checked In", icon: 'info', background: '#1c1c1e', color: '#fff'});
-
-            const late = diff(sets.start, time);
-            const data = { date, checkIn: time, checkOut: "", late: late > 0 ? late : 0, ot: 0 };
-            
-            db.ref('attendance').push(data);
-            logs.unshift({ id: 'temp', ...data });
-            render();
-            Haptics();
+            if(logs.find(l => l.date === date)) return Swal.fire("Today is recorded.");
+            const late = diffMins(sets.start, time);
+            db.ref('attendance').push({ date, checkIn: time, checkOut: "", late: late > 0 ? late : 0, ot: 0 });
+            vibrate();
         }
 
-        function handleCheckOut() {
+        function checkOut() {
             const d = new Date(), date = d.toISOString().split('T')[0], time = d.toTimeString().slice(0,5);
             const today = logs.find(l => l.date === date);
-            if(!today || today.checkOut) return Swal.fire({title: "Cannot Check Out", icon: 'error', background: '#1c1c1e', color: '#fff'});
-
-            const otMins = diff(sets.end, time);
-            const otHours = otMins > 60 ? Math.floor(otMins/60) : 0;
-            
-            db.ref('attendance/' + today.id).update({ checkOut: time, ot: otHours });
-            Haptics();
+            if(!today || today.checkOut) return Swal.fire("Error");
+            const ot = diffMins(sets.end, time);
+            db.ref('attendance/'+today.id).update({ checkOut: time, ot: ot > 60 ? Math.floor(ot/60) : 0 });
+            vibrate();
         }
 
         function render() {
-            const now = new Date();
-            const currMonth = now.toISOString().slice(0,7);
-            const mData = logs.filter(l => l.date.startsWith(currMonth));
+            const m = new Date().toISOString().slice(0,7);
+            const mData = logs.filter(l => l.date.startsWith(m));
             
-            document.getElementById('currentMonthText').innerText = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+            const ot = mData.reduce((s,l)=>s+(l.ot||0), 0);
+            const late = mData.reduce((s,l)=>s+(l.late||0), 0);
+            const net = (parseFloat(sets.salary) + (ot * (sets.salary/30/8*1.5))) - Math.min(sets.salary*0.05, 750);
 
-            // Calculations
-            const otH = mData.reduce((s,l) => s + (l.ot || 0), 0);
-            const lateM = mData.reduce((s,l) => s + (l.late || 0), 0);
-            const daily = sets.salary / 30;
-            const otPay = otH * ((daily / 8) * 1.5);
-            const sso = Math.min(sets.salary * 0.05, 750);
-            const net = (parseFloat(sets.salary) + otPay) - sso;
+            document.getElementById('salaryDisplay').innerText = net.toLocaleString(undefined, {minimumFractionDigits:2});
+            document.getElementById('totalOT').innerText = ot;
+            document.getElementById('totalLate').innerText = late;
 
-            document.getElementById('netSalary').innerText = net.toLocaleString(undefined, {minimumFractionDigits:2});
-            document.getElementById('statDays').innerText = mData.length;
-            document.getElementById('statOT').innerText = otH;
-            document.getElementById('statLate').innerText = lateM;
-
-            document.getElementById('attendanceList').innerHTML = mData.map(l => `
-                <div class="ios-card p-5 rounded-[1.8rem] flex justify-between items-center transition-all active:scale-95" onclick="editLog('${l.id}')">
-                    <div>
-                        <p class="text-xs font-bold text-zinc-100">${new Date(l.date).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}</p>
-                        <p class="text-[10px] font-medium opacity-40 uppercase tracking-tighter">${l.checkIn} — ${l.checkOut || 'Active'}</p>
-                    </div>
-                    <div class="flex gap-2">
-                        ${l.late > 0 ? `<span class="text-[9px] font-black px-2 py-1 bg-rose-500/10 text-rose-500 rounded-lg">-${l.late}M</span>` : ''}
-                        ${l.ot > 0 ? `<span class="text-[9px] font-black px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded-lg">+${l.ot}H</span>` : ''}
-                    </div>
+            document.getElementById('historyList').innerHTML = mData.slice(0,5).map(l => `
+                <div class="ios-card p-5 flex justify-between items-center">
+                    <div><p class="text-xs font-bold">${l.date}</p><p class="text-[10px] opacity-40">${l.checkIn} - ${l.checkOut||'...'}</p></div>
+                    <div class="text-right">${l.late > 0 ? `<p class="text-[10px] text-rose-500">Late ${l.late}m</p>` : ''}</div>
                 </div>
             `).join('');
+
+            updateChart(mData);
         }
 
-        // --- 3. Utilities ---
-
-        function diff(t1, t2) {
-            const [h1, m1] = t1.split(':').map(Number), [h2, m2] = t2.split(':').map(Number);
-            return (h2 * 60 + m2) - (h1 * 60 + m1);
-        }
-
-        function showPage(id, btn) {
+        function switchPage(id, btn) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            document.querySelectorAll('nav button').forEach(b => {
-                b.classList.remove('bg-indigo-600', 'text-white');
-                b.classList.add('text-zinc-500');
-            });
-            btn.classList.add('bg-indigo-600', 'text-white');
-            btn.classList.remove('text-zinc-500');
-            Haptics();
+            document.querySelectorAll('nav button').forEach(b => b.classList.replace('text-indigo-500', 'text-zinc-500'));
+            btn.classList.replace('text-zinc-500', 'text-indigo-500');
+            vibrate();
         }
 
-        function saveSets() {
-            sets = { 
-                salary: document.getElementById('baseSalary').value, 
-                start: document.getElementById('stdStart').value, 
-                end: document.getElementById('stdEnd').value 
-            };
-            localStorage.setItem('wf_sets', JSON.stringify(sets));
+        function diffMins(t1, t2) {
+            const [h1, m1] = t1.split(':').map(Number), [h2, m2] = t2.split(':').map(Number);
+            return (h2*60+m2) - (h1*60+m1);
+        }
+
+        function updateSets() {
+            sets = { salary: document.getElementById('baseSalary').value, start: document.getElementById('startTime').value, end: document.getElementById('endTime').value };
+            localStorage.setItem('cf_sets', JSON.stringify(sets));
             render();
         }
 
-        function Haptics() {
-            if (navigator.vibrate) navigator.vibrate(10);
+        function vibrate() { if(navigator.vibrate) navigator.vibrate(15); }
+
+        function updateChart(data) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            if(chart) chart.destroy();
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.date.split('-')[2]).reverse(),
+                    datasets: [{ label: 'OT', data: data.map(d => d.ot).reverse(), borderColor: '#6366f1', tension: 0.4 }]
+                },
+                options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
+            });
         }
 
         window.onload = () => {
             document.getElementById('baseSalary').value = sets.salary;
-            document.getElementById('stdStart').value = sets.start;
-            document.getElementById('stdEnd').value = sets.end;
-            render();
-        };
-
-        // Service Worker for PWA
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
+            document.getElementById('startTime').value = sets.start;
+            document.getElementById('endTime').value = sets.end;
         }
     </script>
 </body>
