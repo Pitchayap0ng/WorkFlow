@@ -3,106 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CleanFlow Pro</title>
-
+    <title>CleanFlow Fix</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3551/3551628.png">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;500;700&display=swap');
-        body { 
-            font-family: 'Anuphan', sans-serif; 
-            background-color: #000; color: #fff;
-            margin: 0; overflow: hidden; height: 100vh;
-        }
+        body { font-family: 'Anuphan', sans-serif; background-color: #000; color: #fff; overflow: hidden; height: 100vh; }
         .page { display: none; height: 100vh; overflow-y: auto; padding-bottom: 120px; }
         .page.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .ios-card { background: rgba(28, 28, 30, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 2rem; }
-        nav { z-index: 9999 !important; }
-        * { -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
-<body class="antialiased">
-
-    <main id="main-content" class="pt-[env(safe-area-inset-top)] px-6">
-        
-        <section id="page-home" class="page active space-y-6 pt-10">
+<body>
+    <main class="pt-[env(safe-area-inset-top)] px-6">
+        <section id="page-home" class="page active pt-10">
             <header class="mb-8">
-                <p class="text-[10px] font-bold opacity-40 uppercase tracking-widest">Net Salary</p>
+                <p class="text-[10px] font-bold opacity-40 uppercase tracking-widest">เงินเดือนสุทธิ (รวม OT - หักประกันสังคม)</p>
                 <h1 class="text-4xl font-bold">฿<span id="salaryDisplay">0.00</span></h1>
             </header>
-
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-4 mb-6">
                 <button onclick="checkIn()" class="h-44 ios-card bg-indigo-600 border-none flex flex-col items-center justify-center gap-3 active:scale-95 transition-all">
-                    <i class="fa-solid fa-bolt text-2xl"></i>
+                    <i class="fa-solid fa-play text-2xl"></i>
                     <span class="text-xs font-bold uppercase">Check In</span>
                 </button>
                 <button onclick="checkOut()" class="h-44 ios-card flex flex-col items-center justify-center gap-3 active:scale-95 transition-all">
-                    <i class="fa-solid fa-moon text-2xl opacity-40"></i>
-                    <span class="text-xs font-bold uppercase opacity-40">Check Out</span>
+                    <i class="fa-solid fa-stop text-2xl"></i>
+                    <span class="text-xs font-bold uppercase">Check Out</span>
                 </button>
             </div>
-
             <div id="historyList" class="space-y-3"></div>
         </section>
 
-        <section id="page-stats" class="page space-y-6 pt-10">
-            <h2 class="text-2xl font-bold">Statistics</h2>
-            <div class="ios-card p-6">
-                <canvas id="myChart" style="width:100%; max-height:200px;"></canvas>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="ios-card p-4 text-center">
-                    <p class="text-[10px] opacity-40 uppercase">Late (Min)</p>
-                    <p id="totalLate" class="text-xl font-bold text-rose-500">0</p>
-                </div>
-                <div class="ios-card p-4 text-center">
-                    <p class="text-[10px] opacity-40 uppercase">OT (Hrs)</p>
-                    <p id="totalOT" class="text-xl font-bold text-indigo-400">0</p>
-                </div>
-            </div>
-        </section>
-
-        <section id="page-settings" class="page space-y-6 pt-10">
-            <h2 class="text-2xl font-bold">Settings</h2>
+        <section id="page-settings" class="page pt-10">
+            <h2 class="text-2xl font-bold mb-6">ตั้งค่า</h2>
             <div class="ios-card p-6 space-y-6">
                 <div>
-                    <label class="text-[10px] font-bold opacity-30 uppercase">Monthly Salary</label>
+                    <label class="text-[10px] font-bold opacity-30 uppercase">เงินเดือนพื้นฐาน</label>
                     <input type="number" id="baseSalary" onchange="updateSets()" class="w-full bg-transparent text-xl font-bold border-b border-white/10 py-2 outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] font-bold opacity-30 uppercase">Start Time</label>
-                        <input type="time" id="startTime" onchange="updateSets()" class="w-full bg-transparent text-lg py-2 outline-none">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold opacity-30 uppercase">End Time</label>
-                        <input type="time" id="endTime" onchange="updateSets()" class="w-full bg-transparent text-lg py-2 outline-none">
-                    </div>
+                    <div><label class="text-[10px] font-bold opacity-30 uppercase">เวลาเข้างาน</label><input type="time" id="startTime" onchange="updateSets()" class="w-full bg-transparent py-2 outline-none"></div>
+                    <div><label class="text-[10px] font-bold opacity-30 uppercase">เวลาเลิกงาน</label><input type="time" id="endTime" onchange="updateSets()" class="w-full bg-transparent py-2 outline-none"></div>
                 </div>
             </div>
         </section>
-
     </main>
 
-    <nav class="fixed bottom-10 left-6 right-6 ios-card p-2 flex justify-around items-center shadow-2xl">
-        <button onclick="switchPage('page-home', this)" class="p-4 text-indigo-500 transition-all"><i class="fa-solid fa-house"></i></button>
-        <button onclick="switchPage('page-stats', this)" class="p-4 text-zinc-500 transition-all"><i class="fa-solid fa-chart-pie"></i></button>
-        <button onclick="switchPage('page-settings', this)" class="p-4 text-zinc-500 transition-all"><i class="fa-solid fa-gear"></i></button>
+    <nav class="fixed bottom-10 left-6 right-6 ios-card p-2 flex justify-around items-center shadow-2xl z-50">
+        <button onclick="switchPage('page-home', this)" class="p-4 text-indigo-500"><i class="fa-solid fa-clock"></i></button>
+        <button onclick="switchPage('page-settings', this)" class="p-4 text-zinc-500"><i class="fa-solid fa-gear"></i></button>
     </nav>
 
     <script>
-        // --- Configuration ---
         const firebaseConfig = {
             apiKey: "AIzaSyA11zPbXEFs-sdIHKaxhkprkoGSGP1whfg",
             authDomain: "ims-fei.firebaseapp.com",
@@ -112,58 +70,64 @@
             messagingSenderId: "791711191329",
             appId: "1:791711191329:web:0a4ba03cd5f11eb71bae60"
         };
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
         let logs = [];
         let sets = JSON.parse(localStorage.getItem('cf_sets')) || { salary: 15000, start: "08:30", end: "17:30" };
-        let chart = null;
 
-        // --- Logic ---
         db.ref('attendance').on('value', snap => {
-            const val = snap.val();
-            logs = val ? Object.keys(val).map(id => ({id, ...val[id]})) : [];
-            logs.sort((a,b) => new Date(b.date) - new Date(a.date));
+            const data = snap.val();
+            logs = data ? Object.keys(data).map(id => ({ id, ...data[id] })) : [];
+            logs.sort((a, b) => new Date(b.date) - new Date(a.date));
             render();
         });
 
         function checkIn() {
-            const d = new Date(), date = d.toISOString().split('T')[0], time = d.toTimeString().slice(0,5);
-            if(logs.find(l => l.date === date)) return Swal.fire("Today is recorded.");
-            const late = diffMins(sets.start, time);
+            const now = new Date(), date = now.toISOString().split('T')[0], time = now.toTimeString().slice(0, 5);
+            if (logs.find(l => l.date === date)) return Swal.fire({ title: "วันนี้ลงเวลาแล้ว", icon: "warning", background: "#1c1c1e", color: "#fff" });
+            
+            const late = diff(sets.start, time);
             db.ref('attendance').push({ date, checkIn: time, checkOut: "", late: late > 0 ? late : 0, ot: 0 });
-            vibrate();
+            Swal.fire({ title: "Check In สำเร็จ", icon: "success", timer: 1000, showConfirmButton: false });
         }
 
         function checkOut() {
-            const d = new Date(), date = d.toISOString().split('T')[0], time = d.toTimeString().slice(0,5);
-            const today = logs.find(l => l.date === date);
-            if(!today || today.checkOut) return Swal.fire("Error");
-            const ot = diffMins(sets.end, time);
-            db.ref('attendance/'+today.id).update({ checkOut: time, ot: ot > 60 ? Math.floor(ot/60) : 0 });
-            vibrate();
+            const now = new Date(), date = now.toISOString().split('T')[0], time = now.toTimeString().slice(0, 5);
+            const todayLog = logs.find(l => l.date === date);
+            if (!todayLog) return Swal.fire({ title: "ยังไม่ได้ Check In ของวันนี้!", icon: "error", background: "#1c1c1e", color: "#fff" });
+            if (todayLog.checkOut) return Swal.fire({ title: "Check Out ไปแล้ว", icon: "info", background: "#1c1c1e", color: "#fff" });
+
+            const otMin = diff(sets.end, time);
+            const otHour = otMin > 60 ? Math.floor(otMin / 60) : 0;
+            db.ref('attendance/' + todayLog.id).update({ checkOut: time, ot: otHour });
+            Swal.fire({ title: "Check Out สำเร็จ", icon: "success", timer: 1000, showConfirmButton: false });
         }
 
         function render() {
-            const m = new Date().toISOString().slice(0,7);
-            const mData = logs.filter(l => l.date.startsWith(m));
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            const mData = logs.filter(l => l.date.startsWith(currentMonth));
             
-            const ot = mData.reduce((s,l)=>s+(l.ot||0), 0);
-            const late = mData.reduce((s,l)=>s+(l.late||0), 0);
-            const net = (parseFloat(sets.salary) + (ot * (sets.salary/30/8*1.5))) - Math.min(sets.salary*0.05, 750);
+            const totalOT = mData.reduce((s, l) => s + (l.ot || 0), 0);
+            const otPay = totalOT * ((sets.salary / 30 / 8) * 1.5);
+            const sso = Math.min(sets.salary * 0.05, 750);
+            const net = (parseFloat(sets.salary) + otPay) - sso;
 
-            document.getElementById('salaryDisplay').innerText = net.toLocaleString(undefined, {minimumFractionDigits:2});
-            document.getElementById('totalOT').innerText = ot;
-            document.getElementById('totalLate').innerText = late;
-
-            document.getElementById('historyList').innerHTML = mData.slice(0,5).map(l => `
+            document.getElementById('salaryDisplay').innerText = net.toLocaleString(undefined, { minimumFractionDigits: 2 });
+            document.getElementById('historyList').innerHTML = mData.slice(0, 5).map(l => `
                 <div class="ios-card p-5 flex justify-between items-center">
-                    <div><p class="text-xs font-bold">${l.date}</p><p class="text-[10px] opacity-40">${l.checkIn} - ${l.checkOut||'...'}</p></div>
-                    <div class="text-right">${l.late > 0 ? `<p class="text-[10px] text-rose-500">Late ${l.late}m</p>` : ''}</div>
+                    <div><p class="text-xs font-bold">${l.date}</p><p class="text-[10px] opacity-40">${l.checkIn} - ${l.checkOut || 'กำลังทำงาน...'}</p></div>
+                    <div class="text-right">
+                        ${l.late > 0 ? `<p class="text-[9px] text-rose-500 font-bold">สาย ${l.late} นาที</p>` : ''}
+                        ${l.ot > 0 ? `<p class="text-[9px] text-indigo-400 font-bold">OT ${l.ot} ชม.</p>` : ''}
+                    </div>
                 </div>
             `).join('');
+        }
 
-            updateChart(mData);
+        function diff(t1, t2) {
+            const [h1, m1] = t1.split(':').map(Number), [h2, m2] = t2.split(':').map(Number);
+            return (h2 * 60 + m2) - (h1 * 60 + m1);
         }
 
         function switchPage(id, btn) {
@@ -171,12 +135,6 @@
             document.getElementById(id).classList.add('active');
             document.querySelectorAll('nav button').forEach(b => b.classList.replace('text-indigo-500', 'text-zinc-500'));
             btn.classList.replace('text-zinc-500', 'text-indigo-500');
-            vibrate();
-        }
-
-        function diffMins(t1, t2) {
-            const [h1, m1] = t1.split(':').map(Number), [h2, m2] = t2.split(':').map(Number);
-            return (h2*60+m2) - (h1*60+m1);
         }
 
         function updateSets() {
@@ -185,26 +143,11 @@
             render();
         }
 
-        function vibrate() { if(navigator.vibrate) navigator.vibrate(15); }
-
-        function updateChart(data) {
-            const ctx = document.getElementById('myChart').getContext('2d');
-            if(chart) chart.destroy();
-            chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.map(d => d.date.split('-')[2]).reverse(),
-                    datasets: [{ label: 'OT', data: data.map(d => d.ot).reverse(), borderColor: '#6366f1', tension: 0.4 }]
-                },
-                options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
-            });
-        }
-
         window.onload = () => {
             document.getElementById('baseSalary').value = sets.salary;
             document.getElementById('startTime').value = sets.start;
             document.getElementById('endTime').value = sets.end;
-        }
+        };
     </script>
 </body>
 </html>
