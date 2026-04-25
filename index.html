@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>WorkFlow Pro</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WorkFlow">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3551/3551628.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;500;700&display=swap');
+        
+        :root { --accent: #6366f1; }
+        body { 
+            font-family: 'Anuphan', sans-serif; 
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            background-color: #000;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            position: fixed;
+        }
+
+        /* ปรับแต่งส่วนที่ติดขอบ Notch ของ iPhone */
+        header { padding-top: env(safe-area-inset-top); }
+        nav { padding-bottom: env(safe-area-inset-bottom); }
+
+        .page { display: none; height: 100%; overflow-y: auto; padding-bottom: 120px; }
+        .page.active { display: block; animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .ios-card {
+            background: rgba(28, 28, 30, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="p-8 pb-4">
+        <div class="flex justify-between items-end">
+            <div>
+                <p class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Net Salary (Estimated)</p>
+                <h1 class="text-4xl font-light">฿<span id="netSalary" class="font-bold">0.00</span></h1>
+            </div>
+            <div class="text-right">
+                <p id="currentMonthText" class="text-xs font-bold text-indigo-400 uppercase tracking-tighter"></p>
+            </div>
+        </div>
+    </header>
+
+    <main class="px-6 h-full">
+        <section id="home" class="page active space-y-6">
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="handleCheckIn()" class="h-40 rounded-[2.5rem] bg-indigo-600 text-white flex flex-col items-center justify-center gap-3 active:scale-95 transition-all shadow-2xl shadow-indigo-500/30">
+                    <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                        <i class="fa-solid fa-sign-in-alt text-xl"></i>
+                    </div>
+                    <span class="text-[10px] font-black uppercase tracking-widest">Check In</span>
+                </button>
+                <button onclick="handleCheckOut()" class="h-40 rounded-[2.5rem] ios-card text-zinc-300 flex flex-col items-center justify-center gap-3 active:scale-95 transition-all">
+                    <div class="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center">
+                        <i class="fa-solid fa-sign-out-alt text-xl"></i>
+                    </div>
+                    <span class="text-[10px] font-black uppercase tracking-widest opacity-60">Check Out</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3">
+                <div class="ios-card p-4 rounded-3xl text-center">
+                    <p class="text-[9px] opacity-40 uppercase font-bold">Days</p>
+                    <p id="statDays" class="text-lg font-bold">0</p>
+                </div>
+                <div class="ios-card p-4 rounded-3xl text-center">
+                    <p class="text-[9px] opacity-40 uppercase font-bold">OT (Hrs)</p>
+                    <p id="statOT" class="text-lg font-bold text-indigo-400">0</p>
+                </div>
+                <div class="ios-card p-4 rounded-3xl text-center">
+                    <p class="text-[9px] opacity-40 uppercase font-bold">Late (Min)</p>
+                    <p id="statLate" class="text-lg font-bold text-rose-500">0</p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <p class="text-[10px] font-bold uppercase tracking-widest opacity-30 px-2">History</p>
+                <div id="attendanceList" class="space-y-3"></div>
+            </div>
+        </section>
+
+        <section id="settings" class="page space-y-6">
+            <h2 class="text-2xl font-bold px-2">Settings</h2>
+            <div class="ios-card p-6 rounded-[2.5rem] space-y-6">
+                <div>
+                    <label class="text-[10px] font-bold opacity-30 uppercase tracking-widest">Monthly Base Salary</label>
+                    <input type="number" id="baseSalary" onchange="saveSets()" class="w-full bg-transparent text-2xl font-bold border-b border-zinc-800 py-3 focus:outline-none focus:border-indigo-500 transition-colors">
+                </div>
+                <div class="grid grid-cols-2 gap-8">
+                    <div>
+                        <label class="text-[10px] font-bold opacity-30 uppercase tracking-widest">Shift Start</label>
+                        <input type="time" id="stdStart" onchange="saveSets()" class="w-full bg-transparent text-xl py-3 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold opacity-30 uppercase tracking-widest">Shift End</label>
+                        <input type="time" id="stdEnd" onchange="saveSets()" class="w-full bg-transparent text-xl py-3 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+            <p class="text-center text-[10px] opacity-20">WorkFlow iOS v2.0 • Offline Ready</p>
+        </section>
+    </main>
+
+    <nav class="fixed bottom-10 left-1/2 -translate-x-1/2 ios-card px-3 py-3 rounded-full flex gap-2 shadow-2xl z-50">
+        <button onclick="showPage('home', this)" class="w-14 h-14 rounded-full bg-indigo-600 text-white transition-all duration-300">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+        </button>
+        <button onclick="showPage('settings', this)" class="w-14 h-14 rounded-full text-zinc-500 transition-all duration-300">
+            <i class="fa-solid fa-sliders"></i>
+        </button>
+    </nav>
+
+    <script>
+        // --- 1. Firebase & Setup ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyA11zPbXEFs-sdIHKaxhkprkoGSGP1whfg",
+            authDomain: "ims-fei.firebaseapp.com",
+            databaseURL: "https://ims-fei-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ims-fei",
+            storageBucket: "ims-fei.firebasestorage.app",
+            messagingSenderId: "791711191329",
+            appId: "1:791711191329:web:0a4ba03cd5f11eb71bae60"
+        };
+
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        db.ref('attendance').keepSynced(true); // Offline Support
+
+        let logs = JSON.parse(localStorage.getItem('wf_cache')) || [];
+        let sets = JSON.parse(localStorage.getItem('wf_sets')) || { salary: 15000, start: "08:30", end: "17:30" };
+
+        // --- 2. Core Functions ---
+
+        db.ref('attendance').on('value', snap => {
+            const val = snap.val();
+            logs = val ? Object.keys(val).map(id => ({ id, ...val[id] })) : [];
+            logs.sort((a,b) => new Date(b.date) - new Date(a.date));
+            localStorage.setItem('wf_cache', JSON.stringify(logs));
+            render();
+        });
+
+        function handleCheckIn() {
+            const d = new Date(), date = d.toISOString().split('T')[0], time = d.toTimeString().slice(0,5);
+            if(logs.find(l => l.date === date)) return Swal.fire({title: "Already Checked In", icon: 'info', background: '#1c1c1e', color: '#fff'});
+
+            const late = diff(sets.start, time);
+            const data = { date, checkIn: time, checkOut: "", late: late > 0 ? late : 0, ot: 0 };
+            
+            db.ref('attendance').push(data);
+            logs.unshift({ id: 'temp', ...data });
+            render();
+            Haptics();
+        }
+
+        function handleCheckOut() {
+            const d = new Date(), date = d.toISOString().split('T')[0], time = d.toTimeString().slice(0,5);
+            const today = logs.find(l => l.date === date);
+            if(!today || today.checkOut) return Swal.fire({title: "Cannot Check Out", icon: 'error', background: '#1c1c1e', color: '#fff'});
+
+            const otMins = diff(sets.end, time);
+            const otHours = otMins > 60 ? Math.floor(otMins/60) : 0;
+            
+            db.ref('attendance/' + today.id).update({ checkOut: time, ot: otHours });
+            Haptics();
+        }
+
+        function render() {
+            const now = new Date();
+            const currMonth = now.toISOString().slice(0,7);
+            const mData = logs.filter(l => l.date.startsWith(currMonth));
+            
+            document.getElementById('currentMonthText').innerText = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+
+            // Calculations
+            const otH = mData.reduce((s,l) => s + (l.ot || 0), 0);
+            const lateM = mData.reduce((s,l) => s + (l.late || 0), 0);
+            const daily = sets.salary / 30;
+            const otPay = otH * ((daily / 8) * 1.5);
+            const sso = Math.min(sets.salary * 0.05, 750);
+            const net = (parseFloat(sets.salary) + otPay) - sso;
+
+            document.getElementById('netSalary').innerText = net.toLocaleString(undefined, {minimumFractionDigits:2});
+            document.getElementById('statDays').innerText = mData.length;
+            document.getElementById('statOT').innerText = otH;
+            document.getElementById('statLate').innerText = lateM;
+
+            document.getElementById('attendanceList').innerHTML = mData.map(l => `
+                <div class="ios-card p-5 rounded-[1.8rem] flex justify-between items-center transition-all active:scale-95" onclick="editLog('${l.id}')">
+                    <div>
+                        <p class="text-xs font-bold text-zinc-100">${new Date(l.date).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}</p>
+                        <p class="text-[10px] font-medium opacity-40 uppercase tracking-tighter">${l.checkIn} — ${l.checkOut || 'Active'}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        ${l.late > 0 ? `<span class="text-[9px] font-black px-2 py-1 bg-rose-500/10 text-rose-500 rounded-lg">-${l.late}M</span>` : ''}
+                        ${l.ot > 0 ? `<span class="text-[9px] font-black px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded-lg">+${l.ot}H</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- 3. Utilities ---
+
+        function diff(t1, t2) {
+            const [h1, m1] = t1.split(':').map(Number), [h2, m2] = t2.split(':').map(Number);
+            return (h2 * 60 + m2) - (h1 * 60 + m1);
+        }
+
+        function showPage(id, btn) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('nav button').forEach(b => {
+                b.classList.remove('bg-indigo-600', 'text-white');
+                b.classList.add('text-zinc-500');
+            });
+            btn.classList.add('bg-indigo-600', 'text-white');
+            btn.classList.remove('text-zinc-500');
+            Haptics();
+        }
+
+        function saveSets() {
+            sets = { 
+                salary: document.getElementById('baseSalary').value, 
+                start: document.getElementById('stdStart').value, 
+                end: document.getElementById('stdEnd').value 
+            };
+            localStorage.setItem('wf_sets', JSON.stringify(sets));
+            render();
+        }
+
+        function Haptics() {
+            if (navigator.vibrate) navigator.vibrate(10);
+        }
+
+        window.onload = () => {
+            document.getElementById('baseSalary').value = sets.salary;
+            document.getElementById('stdStart').value = sets.start;
+            document.getElementById('stdEnd').value = sets.end;
+            render();
+        };
+
+        // Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
