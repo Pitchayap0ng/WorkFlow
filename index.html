@@ -10,22 +10,9 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: white; }
-        .glass-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px; backdrop-filter: blur(15px); }
-        .page { display: none; } .page.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .nav-btn { color: rgba(255, 255, 255, 0.2); transition: 0.3s; }
-        .nav-btn.active { color: #3b82f6; }
-        .time-pill { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: white; padding: 10px; outline: none; text-align: center; }
-        .day-node { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .st-normal { background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); }
-        .st-off { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
-        .admin-view-active { border: 1px solid #22c55e !important; background: rgba(34, 197, 94, 0.05) !important; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="h-screen overflow-hidden">
+<body class="h-screen overflow-hidden text-sm">
 
     <div id="auth-ui" class="p-8 pt-24 h-full overflow-y-auto">
         <div class="max-w-md mx-auto">
@@ -46,24 +33,24 @@
                 <div class="flex justify-between items-center mb-10">
                     <div onclick="editProfile()">
                         <p class="text-[10px] opacity-40 font-bold uppercase tracking-widest">Dashboard</p>
-                        <h2 id="u-display" class="text-2xl font-bold">...</h2>
+                        <h2 id="u-display" class="text-2xl font-semibold">...</h2>
                     </div>
                     <img id="u-photo" onclick="editProfile()" src="" class="w-14 h-14 rounded-full border-2 border-blue-500 object-cover bg-zinc-900 shadow-xl">
                 </div>
 
                 <div class="text-center mb-10">
-                    <p class="text-[10px] opacity-30 font-bold uppercase tracking-widest">Est. Monthly Income</p>
+                    <p class="text-[10px] opacity-30 font-bold uppercase tracking-widest">เงินเดือนโดยประมาณ</p>
                     <h1 class="text-5xl font-bold mt-2">฿<span id="salary-view">0.00</span></h1>
                 </div>
 
-                <div id="rider-card" class="hidden glass-card p-6 mb-8 bg-green-500/5 border-green-500/20">
+                <div id="rider-card" class="hidden glass-card p-6 mb-8 bg-green-500/5">
                     <div class="flex justify-between items-center">
                         <div>
-                            <p class="text-[10px] opacity-60 text-green-500 font-bold uppercase tracking-widest">Today's Delivery</p>
-                            <h3 class="text-3xl font-bold mt-1"><span id="today-bills">0</span> <span class="text-sm opacity-30 font-normal">Bills</span></h3>
+                            <p class="text-[10px] opacity-60 text-green-500 font-bold uppercase tracking-widest">ส่งงานวันนี้</p>
+                            <h3 class="text-3xl font-bold mt-1"><span id="today-bills">0</span> <span class="text-sm opacity-30 font-normal">บิล</span></h3>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="addDelivery(-1)" class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center active:scale-90 transition">-</button>
+                            <button onclick="addDelivery(-1)" class="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center active:scale-90 transition">-</button>
                             <button onclick="addDelivery(1)" class="w-14 h-14 rounded-2xl bg-green-600 flex items-center justify-center active:scale-90 transition shadow-lg shadow-green-500/20">+</button>
                         </div>
                     </div>
@@ -72,33 +59,31 @@
                 <div class="grid grid-cols-2 gap-4">
                     <button onclick="tapIn()" class="h-32 glass-card flex flex-col items-center justify-center gap-3 active:scale-95 transition">
                         <i class="fa-solid fa-clock text-3xl text-blue-500"></i>
-                        <span class="text-[10px] font-bold uppercase tracking-widest">Check In</span>
+                        <span class="text-[10px] font-bold uppercase tracking-widest">ลงเวลาเข้า</span>
                     </button>
                     <button onclick="tapOut()" class="h-32 glass-card flex flex-col items-center justify-center gap-3 active:scale-95 transition">
                         <i class="fa-solid fa-door-open text-3xl text-zinc-500"></i>
-                        <span class="text-[10px] font-bold uppercase tracking-widest">Check Out</span>
+                        <span class="text-[10px] font-bold uppercase tracking-widest">ลงเวลาออก</span>
                     </button>
                 </div>
             </section>
 
             <section id="p-admin" class="page">
-                <h2 class="text-2xl font-bold mb-6 mt-8">Manage Employees</h2>
-                <div id="user-list" class="space-y-3">
-                    <p class="text-center opacity-20 py-10">Loading Employees...</p>
-                </div>
+                <h2 class="text-2xl font-bold mb-6 mt-8 text-blue-500 text-center">จัดการพนักงาน</h2>
+                <div id="user-list" class="space-y-3"></div>
             </section>
 
             <section id="p-week" class="page">
                 <div class="mt-8 mb-6">
-                    <button id="week-back" onclick="exitAdminView()" class="hidden text-green-500 text-[10px] font-bold mb-3 uppercase flex items-center gap-2">
-                        <i class="fa-solid fa-circle-left"></i> Exit Admin Mode
+                    <button id="week-back" onclick="exitAdminView()" class="hidden text-green-500 text-[10px] font-bold mb-2 uppercase flex items-center gap-2">
+                        <i class="fa-solid fa-arrow-left"></i> กลับไปหน้า Admin
                     </button>
                     <div class="flex justify-between items-end">
                         <div>
-                            <h2 class="text-2xl font-bold">Weekly Setup</h2>
-                            <p id="week-target-name" class="text-[10px] opacity-40 font-bold uppercase tracking-widest text-blue-400">Personal Schedule</p>
+                            <h2 class="text-2xl font-bold">ตั้งค่าตารางงาน</h2>
+                            <p id="week-target-name" class="text-[10px] opacity-40 font-bold uppercase text-blue-400">Personal Schedule</p>
                         </div>
-                        <button onclick="saveWeekly()" class="bg-blue-600 text-[10px] font-bold px-5 py-2.5 rounded-xl active:scale-95 transition shadow-lg shadow-blue-500/20">SAVE</button>
+                        <button onclick="saveWeekly()" class="bg-blue-600 text-[11px] font-bold px-5 py-2.5 rounded-2xl active:scale-95 transition">บันทึก</button>
                     </div>
                 </div>
                 <div id="week-list" class="space-y-3"></div>
@@ -106,8 +91,8 @@
 
             <section id="p-cal" class="page">
                 <div class="mt-8 mb-6">
-                    <button id="cal-back" onclick="exitAdminView()" class="hidden text-green-500 text-[10px] font-bold mb-3 uppercase flex items-center gap-2">
-                        <i class="fa-solid fa-circle-left"></i> Exit Admin Mode
+                    <button id="cal-back" onclick="exitAdminView()" class="hidden text-green-500 text-[10px] font-bold mb-2 uppercase flex items-center gap-2">
+                        <i class="fa-solid fa-arrow-left"></i> กลับไปหน้า Admin
                     </button>
                     <div class="flex justify-between items-center text-blue-500">
                         <h2 id="mon-view" class="text-xl font-bold">...</h2>
@@ -116,7 +101,7 @@
                             <button onclick="moveMonth(1)" class="p-2 opacity-50"><i class="fa-solid fa-chevron-right"></i></button>
                         </div>
                     </div>
-                    <p id="cal-target-name" class="text-[10px] opacity-30 font-bold uppercase mt-1 tracking-widest"></p>
+                    <p id="cal-target-name" class="text-[10px] opacity-30 font-bold uppercase mt-1 tracking-widest text-center"></p>
                 </div>
                 <div id="cal-grid" class="grid grid-cols-7 gap-3 text-center"></div>
             </section>
@@ -132,6 +117,6 @@
     </div>
 
     <input type="file" id="file-input" class="hidden" onchange="handleFileUpload(this)">
-    <script src="app.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
