@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>IMS-Workflow Pro</title>
+    <title>IMS-Workflow Pro (Updated)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;600&display=swap');
@@ -19,10 +18,10 @@
         .page.active { display: block; animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         .nav-btn.active { color: #3b82f6; transform: translateY(-3px); }
-        .day-node { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 11px; font-weight: 600; cursor: pointer; }
-        .st-normal { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #3b82f6; }
+        .day-node { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; font-size: 11px; font-weight: 600; cursor: pointer; position: relative; }
+        .st-work { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #3b82f6; }
         .st-off { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; }
-        .time-pill { background: rgba(255, 255, 255, 0.08); border: none; color: #fff; padding: 6px 10px; border-radius: 10px; font-size: 11px; }
+        .dot { width: 4px; height: 4px; border-radius: 50%; background: #3b82f6; position: absolute; bottom: 4px; }
     </style>
 </head>
 <body class="h-screen overflow-hidden">
@@ -30,29 +29,11 @@
     <div id="auth-ui" class="p-8 pt-20 space-y-8 h-full overflow-y-auto">
         <div id="login-box" class="space-y-6">
             <h1 class="text-4xl font-bold text-blue-500">IMS-Workflow</h1>
-            <p class="opacity-40 text-sm">เข้าสู่ระบบเพื่อจัดการงานของคุณ</p>
             <div class="space-y-3">
-                <input type="text" id="l-id" placeholder="Username หรือ อีเมล" class="w-full bg-[#1c1c1e] p-4 rounded-2xl outline-none focus:ring-2 ring-blue-500/50">
-                <input type="password" id="l-pw" placeholder="รหัสผ่าน" class="w-full bg-[#1c1c1e] p-4 rounded-2xl outline-none focus:ring-2 ring-blue-500/50">
+                <input type="text" id="l-id" placeholder="Username หรือ อีเมล" class="w-full bg-[#1c1c1e] p-4 rounded-2xl outline-none">
+                <input type="password" id="l-pw" placeholder="รหัสผ่าน" class="w-full bg-[#1c1c1e] p-4 rounded-2xl outline-none">
             </div>
             <button onclick="doLogin()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition">เข้าสู่ระบบ</button>
-            <button onclick="toggleAuth(true)" class="w-full text-blue-500 text-xs font-bold text-center mt-2">สมัครสมาชิกใหม่</button>
-        </div>
-
-        <div id="reg-box" class="space-y-6 hidden">
-            <h1 class="text-3xl font-bold text-green-500 text-center">สร้างบัญชี</h1>
-            <div class="space-y-3">
-                <input type="text" id="r-user" placeholder="Username" class="w-full bg-[#1c1c1e] p-4 rounded-2xl outline-none">
-                <input type="email" id="r-mail" placeholder="อีเมลสำหรับรับ OTP" class="w-full bg-[#1c1c1e] p-4 rounded-2xl outline-none">
-                <input type="password" id="r-pw" placeholder="รหัสผ่าน (6 ตัวขึ้นไป)" class="w-full bg-[#1c1c1e] p-4 rounded-2xl outline-none">
-                <input type="text" id="r-name" placeholder="ชื่อเล่น/ชื่อเรียก" class="w-full bg-[#1c1c1e] p-4 rounded-2xl outline-none">
-                <div class="flex gap-2 p-1 bg-[#1c1c1e] rounded-2xl">
-                    <button onclick="regType='staff'; updateRegUI()" id="rt-staff" class="flex-1 py-3 rounded-xl text-xs font-bold bg-green-600">Staff</button>
-                    <button onclick="regType='rider'; updateRegUI()" id="rt-rider" class="flex-1 py-3 rounded-xl text-xs font-bold text-zinc-500">Rider</button>
-                </div>
-            </div>
-            <button onclick="sendOTP()" class="w-full bg-green-600 py-4 rounded-2xl font-bold active:scale-95 transition">ส่งรหัส OTP</button>
-            <button onclick="toggleAuth(false)" class="w-full text-zinc-500 text-sm text-center">ย้อนกลับ</button>
         </div>
     </div>
 
@@ -62,48 +43,42 @@
             <section id="p-home" class="page active">
                 <div class="flex justify-between items-center mb-8">
                     <div>
-                        <p class="text-[10px] opacity-40 uppercase tracking-widest font-bold">IMS Dashboard</p>
+                        <p class="text-[10px] opacity-40 uppercase font-bold">ยินดีต้อนรับ</p>
                         <h2 id="u-display" class="text-2xl font-bold">...</h2>
                     </div>
-                    <img id="u-photo" onclick="editProfile()" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-12 h-12 rounded-full border-2 border-blue-500/50 object-cover cursor-pointer">
+                    <img id="u-photo" onclick="editProfile()" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-12 h-12 rounded-full border-2 border-blue-500/50 object-cover">
                 </div>
 
                 <div class="text-center mb-8">
-                    <p class="text-[10px] opacity-30 uppercase font-bold tracking-widest">รายได้เดือนนี้ (โดยประมาณ)</p>
+                    <p class="text-[10px] opacity-30 uppercase font-bold">รายได้ประมาณการ</p>
                     <h1 class="text-5xl font-bold mt-1">฿<span id="salary-view">0.00</span></h1>
                 </div>
 
-                <div id="rider-card" class="hidden glass-card p-5 mb-6 border-green-500/20">
+                <div id="rider-card" class="hidden glass-card p-5 mb-6">
                     <div class="flex justify-between items-center">
-                        <div>
-                            <p class="text-[10px] opacity-50 uppercase font-bold text-green-500">Delivery วันนี้</p>
-                            <h3 class="text-xl font-bold"><span id="today-bills">0</span> บิล</h3>
+                        <div onclick="editBills()">
+                            <p class="text-[10px] opacity-50 uppercase font-bold text-green-500">บิลวันนี้ (แตะเพื่อแก้)</p>
+                            <h3 class="text-2xl font-bold"><span id="today-bills">0</span> บิล</h3>
                         </div>
-                        <button onclick="addDelivery(1)" class="bg-green-600 w-12 h-12 rounded-2xl flex items-center justify-center active:scale-90 transition"><i class="fa-solid fa-motorcycle"></i></button>
+                        <button onclick="addDelivery(1)" class="bg-green-600 w-12 h-12 rounded-2xl flex items-center justify-center active:scale-90 transition"><i class="fa-solid fa-plus"></i></button>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <button onclick="tapIn()" class="h-32 glass-card bg-blue-600/10 flex flex-col items-center justify-center gap-2 active:scale-95 transition">
-                        <i class="fa-solid fa-fingerprint text-2xl text-blue-500"></i><span class="font-bold text-[10px]">CHECK IN</span>
+                        <i class="fa-solid fa-clock text-2xl text-blue-500"></i><span class="font-bold text-[10px]">CHECK IN</span>
                     </button>
                     <button onclick="tapOut()" class="h-32 glass-card bg-zinc-600/5 flex flex-col items-center justify-center gap-2 active:scale-95 transition">
-                        <i class="fa-solid fa-sign-out-alt text-2xl text-zinc-600"></i><span class="font-bold text-[10px]">CHECK OUT</span>
+                        <i class="fa-solid fa-door-open text-2xl text-zinc-500"></i><span class="font-bold text-[10px]">CHECK OUT</span>
                     </button>
                 </div>
             </section>
 
             <section id="p-admin" class="page">
-                <div class="mt-8 mb-6">
-                    <h2 class="text-3xl font-bold">Admin</h2>
-                    <p class="text-sm opacity-40">Management Console</p>
-                </div>
-                <div id="user-list" class="space-y-3 pb-10">
-                    </div>
+                <div class="mt-8 mb-6"><h2 class="text-3xl font-bold">Admin</h2></div>
+                <div id="user-list" class="space-y-3 pb-10"></div>
             </section>
 
-            <section id="p-week" class="page"><div id="week-list" class="space-y-3 mt-8"></div></section>
-            
             <section id="p-cal" class="page">
                 <div class="flex justify-between items-center mb-6 mt-8">
                     <h2 id="mon-view" class="text-xl font-bold">...</h2>
@@ -112,20 +87,19 @@
                         <button onclick="moveMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
                     </div>
                 </div>
-                <div class="glass-card p-4"><div id="cal-grid" class="grid grid-cols-7 gap-2"></div></div>
+                <div id="cal-grid" class="grid grid-cols-7 gap-2"></div>
+                <p class="text-[9px] opacity-30 mt-4 text-center">* แตะที่วันที่เพื่อแก้ไขหรือลบข้อมูลการลงเวลา</p>
             </section>
         </main>
 
-        <nav class="fixed bottom-6 left-6 right-6 glass-card p-2 flex justify-around items-center shadow-2xl">
+        <nav class="fixed bottom-6 left-6 right-6 glass-card p-2 flex justify-around items-center">
             <button onclick="go('p-home', this)" class="nav-btn active p-4 text-xl"><i class="fa-solid fa-house"></i></button>
             <button id="nav-admin" onclick="go('p-admin', this)" class="nav-btn p-4 text-xl hidden"><i class="fa-solid fa-users-gear"></i></button>
-            <button onclick="go('p-week', this)" class="nav-btn p-4 text-xl"><i class="fa-solid fa-business-time"></i></button>
-            <button onclick="go('p-cal', this)" class="nav-btn p-4 text-xl"><i class="fa-solid fa-calendar-alt"></i></button>
-            <button onclick="confirmLogout()" class="p-4 text-red-500/50"><i class="fa-solid fa-power-off"></i></button>
+            <button onclick="go('p-cal', this)" class="nav-btn p-4 text-xl"><i class="fa-solid fa-calendar-days"></i></button>
+            <button onclick="confirmLogout()" class="p-4 text-red-500/40"><i class="fa-solid fa-power-off"></i></button>
         </nav>
     </div>
 
-    <input type="file" id="file-input" class="hidden" onchange="handleFileUpload(this)">
     <script src="app.js"></script>
 </body>
 </html>
