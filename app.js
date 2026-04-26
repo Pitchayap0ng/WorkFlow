@@ -1,4 +1,4 @@
-// 1. Firebase Config
+// 1. Config
 const firebaseConfig = {
     apiKey: "AIzaSyA11zPbXEFs-sdIHKaxhkprkoGSGP1whfg",
     authDomain: "ims-fei.firebaseapp.com",
@@ -9,32 +9,22 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.database();
+const auth = firebase.auth(), db = firebase.database();
 emailjs.init("WSvF2N1nopC2xfuZo");
 
 let currentUser = null, userData = {}, logs = [], viewDate = new Date();
 const DAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
 const MONTHS_TH = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
 
-// --- ฟังก์ชันหลัก ---
+// 2. Authentication Logic
 function toggleAuth(isReg) {
-    const lBox = document.getElementById('login-box');
-    const rBox = document.getElementById('reg-box');
-    if(isReg) {
-        lBox.classList.add('hidden');
-        rBox.classList.remove('hidden');
-    } else {
-        lBox.classList.remove('hidden');
-        rBox.classList.add('hidden');
-    }
+    document.getElementById('login-box').classList.toggle('hidden', isReg);
+    document.getElementById('reg-box').classList.toggle('hidden', !isReg);
 }
 
 async function doLogin() {
-    const id = document.getElementById('l-id').value.trim();
-    const pw = document.getElementById('l-pw').value;
+    const id = document.getElementById('l-id').value.trim(), pw = document.getElementById('l-pw').value;
     if(!id || !pw) return toast("กรุณากรอกข้อมูล", "warning");
-    
     try {
         let email = id;
         if (!id.includes('@')) {
@@ -51,40 +41,39 @@ async function sendOTP() {
     const mail = document.getElementById('r-mail').value.trim();
     const pw = document.getElementById('r-pw').value;
     const name = document.getElementById('r-name').value;
-    
-    if (!user || !mail || pw.length < 6) return toast("ข้อมูลไม่ครบ", "error");
+    if (!user || !mail || pw.length < 6) return toast("กรอกข้อมูลให้ครบ", "error");
 
     const snap = await db.ref('usernames/' + user).once('value');
     if (snap.exists()) return toast("Username นี้มีคนใช้แล้ว", "error");
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    emailjs.send("IMS-work", "template_f6zcr42", {
-        to_email: mail,
-        otp_code: otp,
-        time: new Date().toLocaleTimeString('th-TH')
+    const expireTime = new Date(Date.now() + 15 * 60000).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
+    emailjs.send("IMS-work", "template_34sz4uc", {
+        passcode: otp,
+        time: expireTime,
+        to_email: mail
     }).then(() => {
         Swal.fire({
             title: 'ยืนยัน OTP',
-            text: 'ส่งรหัสไปที่ ' + mail,
+            text: 'รหัสส่งไปที่ ' + mail,
             input: 'text',
             background: '#1c1c1e', color: '#fff',
             preConfirm: (v) => v === otp ? v : Swal.showValidationMessage('รหัสไม่ถูกต้อง')
         }).then(r => { if (r.isConfirmed) finalizeReg({user, mail, pw, name}); });
-    }).catch(e => toast("ส่งเมลไม่สำเร็จ", "error"));
+    }).catch(e => toast("ส่งเมลไม่สำเร็จ Check 'Private Key' settings", "error"));
 }
 
 async function finalizeReg(info) {
     try {
         const res = await auth.createUserWithEmailAndPassword(info.mail, info.pw);
-        const uid = res.user.uid;
-        await db.ref('users/' + uid).set({
-            username: info.user, displayName: info.name, email: info.mail, salary: 15000, isAdmin: false
-        });
-        await db.ref('usernames/' + info.user).set({ email: info.mail, uid: uid });
+        await db.ref('users/' + res.user.uid).set({ username: info.user, displayName: info.name, email: info.mail, salary: 15000 });
+        await db.ref('usernames/' + info.user).set({ email: info.mail, uid: res.user.uid });
         toast("สมัครสำเร็จ!");
     } catch (e) { toast(e.message, "error"); }
 }
 
+// 3. Core App Functions
 auth.onAuthStateChanged(u => {
     currentUser = u;
     document.getElementById('auth-ui').classList.toggle('hidden', !!u);
@@ -96,7 +85,6 @@ function init() {
     db.ref('users/' + currentUser.uid).on('value', s => {
         userData = s.val() || {};
         document.getElementById('u-display').innerText = userData.displayName || 'User';
-        if (userData.isAdmin) document.getElementById('admin-tag').classList.remove('hidden');
         renderWeekly();
         calculateSalary();
     });
@@ -111,14 +99,12 @@ function init() {
 function calculateSalary() {
     const dailyRate = (userData.salary || 15000) / 30;
     const currentMonth = new Date().getMonth();
-    const monthLogs = logs.filter(l => new Date(l.date).getMonth() === currentMonth && !l.isOff && l.checkIn);
-    const total = monthLogs.length * dailyRate;
-    document.getElementById('salary-view').innerText = total.toLocaleString(undefined, {minimumFractionDigits: 2});
+    const count = logs.filter(l => new Date(l.date).getMonth() === currentMonth && !l.isOff && l.checkIn).length;
+    document.getElementById('salary-view').innerText = (count * dailyRate).toLocaleString(undefined, {minimumFractionDigits: 2});
 }
 
 function renderWeekly() {
     const list = document.getElementById('week-list');
-    if(!list) return;
     list.innerHTML = DAYS.map(d => {
         const s = (userData.shifts && userData.shifts[d]) ? userData.shifts[d] : { in: '08:30', out: '17:30', isOff: false };
         return `<div class="glass-card p-4 flex justify-between items-center ${s.isOff ? 'opacity-30' : ''}">
@@ -131,13 +117,9 @@ function renderWeekly() {
 
 function renderCal() {
     const y = viewDate.getFullYear(), m = viewDate.getMonth();
-    const monView = document.getElementById('mon-view');
-    if(monView) monView.innerText = `${MONTHS_TH[m]} ${y + 543}`;
-    
+    document.getElementById('mon-view').innerText = `${MONTHS_TH[m]} ${y + 543}`;
     const total = new Date(y, m + 1, 0).getDate(), start = new Date(y, m, 1).getDay();
     const grid = document.getElementById('cal-grid');
-    if(!grid) return;
-    
     grid.innerHTML = '';
     for (let i = 0; i < start; i++) grid.innerHTML += '<div></div>';
     for (let d = 1; d <= total; d++) {
@@ -153,7 +135,7 @@ function setOff(d, v) { db.ref(`users/${currentUser.uid}/shifts/${d}/isOff`).set
 
 function tapIn() {
     const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
-    if(logs.find(l => l.date === d)) return toast("วันนี้คุณเช็คอินไปแล้ว", "info");
+    if(logs.find(l => l.date === d)) return toast("เช็คอินไปแล้ว", "info");
     db.ref(`attendance/${currentUser.uid}`).push({ date: d, checkIn: t, checkOut: '', isOff: false });
     toast("เช็คอินสำเร็จ");
 }
@@ -161,7 +143,7 @@ function tapIn() {
 function tapOut() {
     const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
     const log = logs.find(l => l.date === d);
-    if(!log) return toast("ยังไม่ได้เช็คอิน", "error");
+    if(!log || log.checkOut) return toast("เช็คอินก่อนหรือเช็คเอาท์ไปแล้ว", "error");
     db.ref(`attendance/${currentUser.uid}/${log.id}`).update({ checkOut: t });
     toast("เช็คเอาท์สำเร็จ");
 }
