@@ -1,4 +1,4 @@
-// --- CONFIGURATION ---
+// --- INITIALIZE ---
 const firebaseConfig = {
     apiKey: "AIzaSyA11zPbXEFs-sdIHKaxhkprkoGSGP1whfg",
     authDomain: "ims-fei.firebaseapp.com",
@@ -19,7 +19,7 @@ let currentUser = null, userData = {}, logs = [], viewDate = new Date(), regType
 const DAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
 const MONTHS_TH = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
 
-// --- 1. AUTH LOGIC ---
+// --- 1. AUTH & REGISTRATION ---
 
 function toggleAuth(isReg) {
     document.getElementById('login-box').classList.toggle('hidden', isReg);
@@ -35,15 +35,19 @@ function setRegType(type) {
 async function doLogin() {
     const id = document.getElementById('l-id').value.trim(), pw = document.getElementById('l-pw').value;
     if(!id || !pw) return toast("กรุณากรอกข้อมูล", "warning");
+    
     try {
         let email = id;
         if (!id.includes('@')) {
             const snap = await db.ref('usernames/' + id.toLowerCase()).once('value');
-            if (!snap.exists()) return toast("ไม่พบ Username", "error");
+            if (!snap.exists()) return toast("ไม่พบ Username นี้", "error");
             email = snap.val().email;
         }
         await auth.signInWithEmailAndPassword(email, pw);
-    } catch (e) { toast("อีเมลหรือรหัสผ่านผิด", "error"); }
+        toast("เข้าสู่ระบบสำเร็จ!", "success"); // แจ้งเตือนเมื่อ Login ผ่าน
+    } catch (e) { 
+        toast("อีเมลหรือรหัสผ่านผิดพลาด", "error"); 
+    }
 }
 
 async function sendOTP() {
@@ -56,30 +60,25 @@ async function sendOTP() {
     if (pw.length < 6) return toast("รหัสผ่านต้องมี 6 ตัวขึ้นไป", "warning");
 
     const snap = await db.ref('usernames/' + user).once('value');
-    if (snap.exists()) return toast("Username นี้ถูกใช้ไปแล้ว", "error");
+    if (snap.exists()) return toast("Username นี้ถูกใช้งานแล้ว", "error");
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    
     Swal.fire({ title: 'กำลังส่งรหัส OTP...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-    // ปรับปรุง Error Handling สำหรับการส่งเมล
     emailjs.send("IMS-work", "template_34sz4uc", { to_email: mail, passcode: otp })
         .then(() => {
             Swal.fire({
-                title: 'ยืนยัน OTP', text: 'ส่งรหัสไปที่ ' + mail + ' แล้ว',
-                input: 'text', background: '#1c1c1e', color: '#fff',
-                confirmButtonText: 'ยืนยัน',
+                title: 'ยืนยันรหัส OTP', text: 'ส่งรหัสไปที่ ' + mail + ' แล้ว',
+                input: 'text', background: '#1c1c1e', color: '#fff', confirmButtonText: 'ยืนยัน',
                 preConfirm: (v) => v === otp ? v : Swal.showValidationMessage('รหัส OTP ไม่ถูกต้อง')
-            }).then(r => { 
-                if (r.isConfirmed) finalizeReg({user, mail, pw, name}); 
-            });
+            }).then(r => { if (r.isConfirmed) finalizeReg({user, mail, pw, name}); });
         })
         .catch(err => {
-            console.error("EmailJS Error:", err);
-            Swal.fire({
-                icon: 'error', title: 'ส่งเมลไม่สำเร็จ',
-                text: 'ไม่สามารถส่งอีเมลไปที่ ' + mail + ' ได้ กรุณาตรวจสอบว่าอีเมลถูกต้องหรือไม่',
-                background: '#1c1c1e', color: '#fff'
+            // แจ้งเตือนกรณีส่งเมลไม่สำเร็จ
+            Swal.fire({ 
+                icon: 'error', title: 'ส่งอีเมลไม่สำเร็จ', 
+                text: 'ไม่เจอเมลนี้หรือเกิดข้อผิดพลาดจากระบบส่งเมล', 
+                background: '#1c1c1e', color: '#fff' 
             });
         });
 }
@@ -96,7 +95,7 @@ async function finalizeReg(info) {
     } catch (e) { toast(e.message, "error"); }
 }
 
-// --- 2. MAIN APP FLOW ---
+// --- 2. CORE LOGIC ---
 
 auth.onAuthStateChanged(u => {
     currentUser = u;
@@ -108,14 +107,13 @@ auth.onAuthStateChanged(u => {
 function init() {
     db.ref('users/' + currentUser.uid).on('value', s => {
         userData = s.val() || {};
-        document.getElementById('u-display').innerText = userData.displayName || 'User';
+        document.getElementById('u-display').innerText = userData.displayName || 'Guest';
         document.getElementById('u-photo').src = userData.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-        
         document.getElementById('delivery-section').classList.toggle('hidden', userData.jobType !== 'rider');
         
         if (userData.role === 'admin') {
             document.getElementById('nav-admin').classList.remove('hidden');
-            loadAllUsers();
+            loadAllUsers(); // โหลดรายชื่อพนักงาน
         } else {
             document.getElementById('nav-admin').classList.add('hidden');
         }
@@ -131,16 +129,16 @@ function init() {
     });
 }
 
-// --- 3. ADMIN FUNCTIONS ---
+// --- 3. ADMIN & USER LIST ---
 
 function loadAllUsers() {
+    const list = document.getElementById('user-list');
+    if (!list) return;
+
     db.ref('users').on('value', s => {
         const data = s.val();
-        const list = document.getElementById('user-list');
-        if (!list) return;
-
         if (!data) {
-            list.innerHTML = '<p class="text-center opacity-30 py-10">ไม่พบรายชื่อพนักงาน</p>';
+            list.innerHTML = '<p class="text-center opacity-30 py-10">ไม่มีข้อมูลพนักงาน</p>';
             return;
         }
 
@@ -148,13 +146,13 @@ function loadAllUsers() {
         list.innerHTML = users.map(u => `
             <div onclick="adminEditUser('${u.uid}')" class="glass-card p-4 flex items-center justify-between mb-2 active:scale-95 transition-all cursor-pointer">
                 <div class="flex items-center gap-3">
-                    <img src="${u.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="w-10 h-10 rounded-full object-cover">
+                    <img src="${u.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="w-10 h-10 rounded-full object-cover border border-white/10">
                     <div>
-                        <p class="font-bold text-sm">${u.displayName || u.username}</p>
-                        <p class="text-[10px] opacity-40 uppercase">${u.jobType || 'staff'} • ${u.role || 'user'}</p>
+                        <p class="font-bold text-sm leading-tight">${u.displayName || u.username}</p>
+                        <p class="text-[9px] opacity-40 uppercase tracking-tighter">${u.jobType || 'staff'} • ${u.role || 'user'}</p>
                     </div>
                 </div>
-                <i class="fa-solid fa-chevron-right opacity-20"></i>
+                <i class="fa-solid fa-chevron-right opacity-20 text-[10px]"></i>
             </div>
         `).join('');
     });
@@ -168,23 +166,27 @@ async function adminEditUser(uid) {
 async function editProfile(targetUid = currentUser.uid, targetData = userData) {
     const isAdmin = userData.role === 'admin';
     const { value: res } = await Swal.fire({
-        title: 'จัดการผู้ใช้', background: '#1c1c1e', color: '#fff',
+        title: 'ตั้งค่าโปรไฟล์', background: '#1c1c1e', color: '#fff',
         html: `
             <div class="space-y-4 text-left">
                 <div class="flex justify-center mb-4" onclick="document.getElementById('file-input').dataset.target='${targetUid}'; document.getElementById('file-input').click()">
-                    <img src="${targetData.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="w-20 h-20 rounded-full object-cover border-2 border-blue-500">
+                    <img src="${targetData.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="w-20 h-20 rounded-full object-cover border-2 border-blue-500 shadow-lg">
                 </div>
-                <input id="sw-name" class="w-full bg-white/5 p-4 rounded-xl outline-none" value="${targetData.displayName || ''}" placeholder="ชื่อเรียก">
-                <input id="sw-sal" type="number" class="w-full bg-white/5 p-4 rounded-xl outline-none" value="${targetData.salary || 15000}" placeholder="เงินเดือนฐาน">
+                <div class="space-y-1"><label class="text-[10px] opacity-50 px-2 uppercase font-bold">Display Name</label>
+                <input id="sw-name" class="w-full bg-white/5 p-4 rounded-xl outline-none" value="${targetData.displayName || ''}"></div>
+                <div class="space-y-1"><label class="text-[10px] opacity-50 px-2 uppercase font-bold">Base Salary</label>
+                <input id="sw-sal" type="number" class="w-full bg-white/5 p-4 rounded-xl outline-none" value="${targetData.salary || 15000}"></div>
                 ${isAdmin ? `
+                    <div class="space-y-1"><label class="text-[10px] opacity-50 px-2 uppercase font-bold">Job Type</label>
                     <select id="sw-job" class="w-full bg-white/5 p-4 rounded-xl outline-none text-white">
-                        <option value="staff" ${targetData.jobType==='staff'?'selected':''}>Staff</option>
-                        <option value="rider" ${targetData.jobType==='rider'?'selected':''}>Rider</option>
-                    </select>
-                    <input id="sw-role" class="w-full bg-white/5 p-4 rounded-xl outline-none" value="${targetData.role || 'staff'}" placeholder="Role (admin/staff)">
+                        <option value="staff" ${targetData.jobType==='staff'?'selected':''}>Staff (พนักงานใน)</option>
+                        <option value="rider" ${targetData.jobType==='rider'?'selected':''}>Rider (พนักงานส่งของ)</option>
+                    </select></div>
+                    <div class="space-y-1"><label class="text-[10px] opacity-50 px-2 uppercase font-bold">User Role</label>
+                    <input id="sw-role" class="w-full bg-white/5 p-4 rounded-xl outline-none" value="${targetData.role || 'staff'}" placeholder="admin/staff"></div>
                 ` : ''}
             </div>`,
-        showCancelButton: true,
+        showCancelButton: true, confirmButtonText: 'บันทึก',
         preConfirm: () => {
             const d = { displayName: document.getElementById('sw-name').value, salary: parseFloat(document.getElementById('sw-sal').value) };
             if (isAdmin) { d.jobType = document.getElementById('sw-job').value; d.role = document.getElementById('sw-role').value; }
@@ -193,19 +195,19 @@ async function editProfile(targetUid = currentUser.uid, targetData = userData) {
     });
     if (res) {
         await db.ref('users/' + targetUid).update(res);
-        toast("บันทึกสำเร็จ");
+        toast("อัปเดตข้อมูลสำเร็จ");
     }
 }
 
-// --- 4. CORE FEATURES ---
+// --- 4. ATTENDANCE & SALARY ---
 
 function calculateSalary() {
     const dailyRate = (userData.salary || 15000) / 30;
-    const currentMonth = new Date().getMonth();
+    const curMonth = new Date().getMonth();
     let totalBase = 0, totalDelivery = 0, todayBills = 0;
 
     logs.forEach(l => {
-        if (new Date(l.date).getMonth() === currentMonth) {
+        if (new Date(l.date).getMonth() === curMonth) {
             if (!l.isOff && l.checkIn) totalBase += dailyRate;
             if (l.delivery) totalDelivery += (l.delivery * DELIVERY_RATE);
             if (l.date === new Date().toISOString().split('T')[0]) todayBills = l.delivery || 0;
@@ -219,37 +221,29 @@ function calculateSalary() {
 function addDelivery(amt = 1) {
     const d = new Date().toISOString().split('T')[0];
     const log = logs.find(l => l.date === d);
-    if (!log) return toast("กรุณาเช็คอินก่อน", "warning");
+    if (!log) return toast("กรุณา Check-In ก่อน", "warning");
     db.ref(`attendance/${currentUser.uid}/${log.id}`).update({ delivery: (log.delivery || 0) + amt });
-    toast(`+${amt} บิล`);
+    toast(`เพิ่ม ${amt} บิลแล้ว`);
 }
 
 async function quickAddDelivery() {
-    const { value: num } = await Swal.fire({ title: 'ระบุจำนวนบิล', input: 'number', background: '#1c1c1e', color: '#fff' });
-    if (num) addDelivery(parseInt(num));
+    const { value: n } = await Swal.fire({ title: 'ระบุจำนวนบิล', input: 'number', background: '#1c1c1e', color: '#fff' });
+    if (n) addDelivery(parseInt(n));
 }
 
 function tapIn() {
     const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
-    if(logs.find(l => l.date === d)) return toast("เช็คอินไปแล้ว", "info");
+    if(logs.find(l => l.date === d)) return toast("วันนี้เช็คอินไปแล้ว", "info");
     db.ref(`attendance/${currentUser.uid}`).push({ date: d, checkIn: t, checkOut: '', isOff: false, delivery: 0 });
-    toast("Check In สำเร็จ");
+    toast("เช็คอินสำเร็จ");
 }
 
 function tapOut() {
     const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
     const log = logs.find(l => l.date === d);
-    if(!log || log.checkOut) return toast("เช็คเอาท์ไม่ได้", "error");
+    if(!log || log.checkOut) return toast("ไม่สามารถเช็คเอาท์ได้", "error");
     db.ref(`attendance/${currentUser.uid}/${log.id}`).update({ checkOut: t });
-    toast("Check Out สำเร็จ");
-}
-
-async function deleteLog(id) {
-    const r = await Swal.fire({ title: 'ลบข้อมูล?', text: 'ยืนยันการลบรายการนี้?', icon: 'warning', showCancelButton: true });
-    if (r.isConfirmed) {
-        await db.ref(`attendance/${currentUser.uid}/${id}`).remove();
-        toast("ลบเรียบร้อย");
-    }
+    toast("เช็คเอาท์สำเร็จ");
 }
 
 // --- 5. UI UTILS ---
@@ -264,11 +258,11 @@ function go(id, btn) {
 function renderWeekly() {
     const list = document.getElementById('week-list');
     if(!list) return;
-    list.innerHTML = `<h2 class="text-xl font-bold mb-4">ตารางงานประจำสัปดาห์</h2>` + DAYS.map(d => {
+    list.innerHTML = `<h2 class="text-xl font-bold mb-4">ตารางงานรายวัน</h2>` + DAYS.map(d => {
         const s = (userData.shifts && userData.shifts[d]) ? userData.shifts[d] : { in: '08:30', out: '17:30', isOff: false };
         return `<div class="glass-card p-4 flex justify-between items-center ${s.isOff ? 'opacity-30' : ''}">
-            <div class="flex flex-col"><span class="font-bold text-sm">${d}</span>
-            <button onclick="db.ref('users/${currentUser.uid}/shifts/${d}/isOff').set(${!s.isOff})" class="text-[10px] text-left text-blue-500 font-bold">${s.isOff ? 'หยุด' : 'ทำงาน'}</button></div>
+            <div class="flex flex-col"><span class="font-bold text-xs">${d}</span>
+            <button onclick="db.ref('users/${currentUser.uid}/shifts/${d}/isOff').set(${!s.isOff})" class="text-[9px] text-left text-blue-500 font-bold">${s.isOff ? 'วันหยุด' : 'วันทำงาน'}</button></div>
             <div class="flex gap-2"><input type="time" class="time-pill" value="${s.in}" onchange="db.ref('users/${currentUser.uid}/shifts/${d}/in').set(this.value)">
             <input type="time" class="time-pill" value="${s.out}" onchange="db.ref('users/${currentUser.uid}/shifts/${d}/out').set(this.value)"></div></div>`;
     }).join('');
@@ -298,7 +292,7 @@ async function editDay(date) {
                 <label class="flex justify-between items-center bg-white/5 p-4 rounded-2xl"><span>วันหยุด</span><input type="checkbox" id="e-off" ${log.isOff ? 'checked' : ''}></label>
                 <div class="grid grid-cols-2 gap-2"><input type="time" id="e-in" class="time-pill w-full" value="${log.checkIn}"><input type="time" id="e-out" class="time-pill w-full" value="${log.checkOut}"></div>
                 <input type="number" id="e-del" class="w-full bg-white/5 p-4 rounded-xl outline-none" value="${log.delivery || 0}" placeholder="บิล Delivery">
-                ${log.id ? `<button onclick="deleteLog('${log.id}'); Swal.close()" class="w-full py-3 text-red-500 font-bold border border-red-500/20 rounded-xl mt-4">ลบข้อมูล</button>` : ''}
+                ${log.id ? `<button onclick="deleteDay('${log.id}'); Swal.close()" class="w-full py-3 text-red-500 font-bold border border-red-500/20 rounded-xl mt-4">ลบข้อมูลรายการนี้</button>` : ''}
             </div>`,
         showCancelButton: true,
         preConfirm: () => ({ isOff: document.getElementById('e-off').checked, checkIn: document.getElementById('e-in').value, checkOut: document.getElementById('e-out').value, delivery: parseInt(document.getElementById('e-del').value) || 0 })
@@ -306,6 +300,14 @@ async function editDay(date) {
     if(res) {
         if(log.id) db.ref(`attendance/${currentUser.uid}/${log.id}`).update({ ...res, date });
         else db.ref(`attendance/${currentUser.uid}`).push({ ...res, date });
+    }
+}
+
+async function deleteDay(id) {
+    const r = await Swal.fire({ title: 'ลบข้อมูล?', text: 'คุณต้องการลบรายการนี้ใช่หรือไม่?', icon: 'warning', showCancelButton: true, background: '#1c1c1e', color: '#fff' });
+    if (r.isConfirmed) {
+        await db.ref(`attendance/${currentUser.uid}/${id}`).remove();
+        toast("ลบข้อมูลสำเร็จ");
     }
 }
 
@@ -319,11 +321,11 @@ async function handleFileUpload(input) {
         const res = await r.json();
         if (res.success) {
             await db.ref('users/' + tid).update({ photoURL: res.data.url });
-            Swal.close(); toast("อัปเดตรูปสำเร็จ");
+            Swal.close(); toast("อัปเดตรูปโปรไฟล์แล้ว");
         }
-    } catch (e) { toast("อัปโหลดล้มเหลว", "error"); }
+    } catch (e) { toast("อัปโหลดไม่สำเร็จ", "error"); }
 }
 
 function moveMonth(v) { viewDate.setMonth(viewDate.getMonth() + v); renderCal(); }
 function toast(m, i="success") { Swal.fire({ title: m, icon: i, timer: 1500, showConfirmButton: false, background: '#1c1c1e', color: '#fff' }); }
-function confirmLogout() { Swal.fire({ title: 'ออกจากระบบ?', showCancelButton: true, background: '#1c1c1e', color: '#fff' }).then(r => { if (r.isConfirmed) auth.signOut(); }); }
+function confirmLogout() { Swal.fire({ title: 'ออกจากระบบ?', background: '#1c1c1e', color: '#fff', showCancelButton: true }).then(r => { if (r.isConfirmed) auth.signOut(); }); }
