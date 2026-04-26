@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>IMS-Workflow</title>
+    <title>IMS-Workflow PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -12,43 +12,40 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="h-screen overflow-hidden text-sm bg-black text-white">
+<body class="h-screen overflow-hidden">
 
-    <div id="auth-ui" class="p-8 pt-24 h-full overflow-y-auto">
-        <div class="max-w-md mx-auto">
-            <h1 class="text-4xl font-bold text-blue-500 tracking-tight text-center">IMS-Workflow</h1>
-            
-            <div id="auth-login" class="mt-12 space-y-4">
+    <div id="auth-ui" class="p-8 pt-24 h-full overflow-y-auto bg-black">
+        <div class="max-w-md mx-auto text-center">
+            <h1 class="text-4xl font-bold text-blue-500 tracking-tight">IMS-Workflow</h1>
+            <div id="auth-login" class="mt-12 space-y-4 text-left">
                 <input type="text" id="l-id" placeholder="Username / Email" class="w-full bg-[#1c1c1e] p-5 rounded-2xl border border-white/5 outline-none focus:border-blue-500 transition">
                 <input type="password" id="l-pw" placeholder="Password" class="w-full bg-[#1c1c1e] p-5 rounded-2xl border border-white/5 outline-none focus:border-blue-500 transition">
                 <div class="flex items-center gap-2 ml-2">
                     <input type="checkbox" id="remember-me" class="w-4 h-4 accent-blue-500">
-                    <label for="remember-me" class="text-[11px] opacity-60">จำชื่อผู้ใช้งาน</label>
+                    <label for="remember-me" class="text-[11px] opacity-60 text-white">จำชื่อผู้ใช้งาน</label>
                 </div>
-                <button onclick="doLogin()" class="w-full bg-blue-600 py-5 rounded-2xl font-bold text-lg active:scale-95 transition mt-4 shadow-xl">LOGIN</button>
-                <div class="flex justify-between mt-6 px-2 text-[11px] opacity-50 font-bold uppercase">
+                <button onclick="doLogin()" class="w-full bg-blue-600 py-5 rounded-2xl font-bold text-lg text-white">LOGIN</button>
+                <div class="flex justify-between mt-6 px-2 text-[11px] opacity-50 font-bold uppercase text-white">
                     <button onclick="toggleAuth('reg')">สมัครสมาชิก</button>
                     <button onclick="forgotPW()">ลืมรหัสผ่าน?</button>
                 </div>
             </div>
-
-            <div id="auth-reg" class="hidden mt-12 space-y-4">
-                <input type="text" id="r-user" placeholder="Username (Eng only)" class="w-full bg-[#1c1c1e] p-5 rounded-2xl border border-white/5 outline-none focus:border-blue-500 transition">
-                <input type="email" id="r-email" placeholder="Email" class="w-full bg-[#1c1c1e] p-5 rounded-2xl border border-white/5 outline-none focus:border-blue-500 transition">
-                <input type="password" id="r-pw" placeholder="Password" class="w-full bg-[#1c1c1e] p-5 rounded-2xl border border-white/5 outline-none focus:border-blue-500 transition">
-                <button onclick="doRegister()" class="w-full bg-blue-600 py-5 rounded-2xl font-bold text-lg active:scale-95 transition mt-4">REGISTER</button>
-                <button onclick="toggleAuth('login')" class="w-full text-center text-[11px] opacity-50 mt-6 block underline">มีบัญชีอยู่แล้ว? เข้าสู่ระบบ</button>
+            <div id="auth-reg" class="hidden mt-12 space-y-4 text-left">
+                <input type="text" id="r-user" placeholder="Username (Eng only)" class="w-full bg-[#1c1c1e] p-5 rounded-2xl border border-white/5 text-white outline-none">
+                <input type="email" id="r-email" placeholder="Email Address" class="w-full bg-[#1c1c1e] p-5 rounded-2xl border border-white/5 text-white outline-none">
+                <input type="password" id="r-pw" placeholder="Create Password" class="w-full bg-[#1c1c1e] p-5 rounded-2xl border border-white/5 text-white outline-none">
+                <button onclick="doRegister()" class="w-full bg-blue-600 py-5 rounded-2xl font-bold text-lg text-white">REGISTER</button>
+                <button onclick="toggleAuth('login')" class="w-full text-[11px] opacity-50 mt-6 font-bold uppercase text-center underline text-white">กลับหน้าล็อกอิน</button>
             </div>
         </div>
     </div>
 
-    <div id="app-ui" class="hidden h-full flex flex-col">
+    <div id="app-ui" class="hidden h-full flex flex-col bg-black text-white">
         <main class="flex-1 px-5 pt-12 overflow-y-auto pb-32">
-            
             <section id="p-home" class="page active">
-                <div id="remote-banner" class="hidden bg-orange-500/20 border border-orange-500/30 p-3 rounded-2xl mb-6 flex justify-between items-center">
-                    <span class="text-[10px] font-bold text-orange-500 uppercase ml-2"><i class="fa-solid fa-eye mr-2"></i> คุมเครื่อง: <span id="remote-name"></span></span>
-                    <button onclick="exitAdminView()" class="bg-orange-500 text-white text-[9px] px-3 py-1 rounded-full font-bold">ออกจากการคุม</button>
+                <div id="remote-banner" onclick="changeStaffRole()" class="hidden bg-orange-500/20 border border-orange-500/30 p-3 rounded-2xl mb-6 flex justify-between items-center cursor-pointer active:scale-95 transition">
+                    <span class="text-[10px] font-bold text-orange-500 uppercase ml-2"><i class="fa-solid fa-user-gear mr-2"></i> กำลังคุม: <span id="remote-name"></span></span>
+                    <button onclick="event.stopPropagation(); exitAdminView()" class="bg-orange-500 text-white text-[9px] px-3 py-1 rounded-full font-bold">ออก</button>
                 </div>
 
                 <div class="flex justify-between items-center mb-10">
@@ -60,18 +57,18 @@
                 </div>
 
                 <div class="text-center mb-10">
-                    <p class="text-[10px] opacity-30 font-bold uppercase tracking-widest">เงินเดือนรวมเดือนนี้</p>
+                    <p class="text-[10px] opacity-30 font-bold uppercase tracking-widest">เงินเดือนโดยประมาณ</p>
                     <h1 class="text-5xl font-bold mt-2">฿<span id="salary-view">0.00</span></h1>
                 </div>
 
-                <div id="rider-card" class="hidden glass-card p-6 mb-8 bg-green-500/5">
+                <div id="rider-card" class="hidden glass-card p-6 mb-8">
                     <div class="flex justify-between items-center">
                         <div>
                             <p class="text-[10px] opacity-60 text-green-500 font-bold uppercase">ส่งงานวันนี้</p>
                             <h3 class="text-3xl font-bold mt-1"><span id="today-bills">0</span> <span class="text-sm opacity-30 font-normal">บิล</span></h3>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="addDelivery(-1)" class="w-10 h-10 rounded-xl bg-white/5">-</button>
+                            <button onclick="addDelivery(-1)" class="w-10 h-10 rounded-xl bg-white/5 border border-white/10">-</button>
                             <button onclick="bulkDelivery()" class="w-10 h-10 rounded-xl bg-green-500/20 text-green-500 font-bold text-xs"><i class="fa-solid fa-plus-minus"></i></button>
                             <button onclick="addDelivery(1)" class="w-12 h-12 rounded-xl bg-green-600 shadow-lg">+</button>
                         </div>
@@ -79,11 +76,11 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
-                    <button onclick="tapIn()" class="h-32 glass-card flex flex-col items-center justify-center gap-3 active:scale-95 transition">
+                    <button onclick="tapIn()" class="h-32 glass-card flex flex-col items-center justify-center gap-3">
                         <i class="fa-solid fa-clock text-3xl text-blue-500"></i>
                         <span class="text-[10px] font-bold uppercase">ลงเวลาเข้า</span>
                     </button>
-                    <button onclick="tapOut()" class="h-32 glass-card flex flex-col items-center justify-center gap-3 active:scale-95 transition">
+                    <button onclick="tapOut()" class="h-32 glass-card flex flex-col items-center justify-center gap-3">
                         <i class="fa-solid fa-door-open text-3xl text-zinc-500"></i>
                         <span class="text-[10px] font-bold uppercase">ลงเวลาออก</span>
                     </button>
@@ -91,31 +88,26 @@
             </section>
 
             <section id="p-admin" class="page">
-                <h2 class="text-2xl font-bold mb-6 mt-8 text-blue-500 text-center uppercase tracking-widest">Employee List</h2>
+                <h2 class="text-2xl font-bold mb-6 mt-8 text-blue-500 text-center uppercase">Manage Staff</h2>
                 <div id="user-list" class="space-y-3"></div>
             </section>
 
             <section id="p-week" class="page">
-                <div class="mt-8 mb-6">
-                    <h2 class="text-2xl font-bold">ตารางงานพนักงาน</h2>
-                    <p id="week-target-name" class="text-[10px] opacity-40 font-bold uppercase"></p>
-                </div>
+                <div class="mt-8 mb-6"><h2 class="text-2xl font-bold">ตารางงาน</h2><p id="week-target-name" class="text-[10px] opacity-40 font-bold uppercase"></p></div>
                 <div id="week-list" class="space-y-3"></div>
-                <button onclick="saveWeekly()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold mt-6 active:scale-95 transition">บันทึกตารางงาน</button>
+                <button onclick="saveWeekly()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold mt-6 shadow-lg">บันทึกตาราง</button>
             </section>
 
             <section id="p-cal" class="page">
                 <div class="mt-8 mb-6 flex justify-between items-center text-blue-500">
-                    <h2 id="mon-view" class="text-xl font-bold underline underline-offset-8">...</h2>
+                    <h2 id="mon-view" class="text-xl font-bold">...</h2>
                     <div class="flex gap-4">
-                        <button onclick="moveMonth(-1)" class="p-2"><i class="fa-solid fa-chevron-left"></i></button>
-                        <button onclick="moveMonth(1)" class="p-2"><i class="fa-solid fa-chevron-right"></i></button>
+                        <button onclick="moveMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button onclick="moveMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
                     </div>
                 </div>
                 <div id="cal-grid" class="grid grid-cols-7 gap-3 text-center"></div>
-                <p id="cal-target-name" class="text-center text-[10px] opacity-30 mt-4 font-bold uppercase tracking-widest"></p>
             </section>
-
         </main>
 
         <nav class="fixed bottom-8 left-6 right-6 glass-card p-2 flex justify-around items-center shadow-2xl z-50">
@@ -126,8 +118,6 @@
             <button onclick="confirmLogout()" class="p-4 text-red-500/40 text-xl"><i class="fa-solid fa-power-off"></i></button>
         </nav>
     </div>
-
-    <input type="file" id="file-input" class="hidden" onchange="handleFileUpload(this)">
     <script src="app.js"></script>
 </body>
 </html>
