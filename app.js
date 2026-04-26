@@ -15,7 +15,7 @@ let currentUser = null, userData = {}, logs = [], viewDate = new Date();
 const DAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
 const MONTHS = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
 
-// --- 1. CORE & LOGIN ---
+// --- AUTH & LOGIN ---
 async function doLogin() {
     const id = document.getElementById('l-id').value.trim(), pw = document.getElementById('l-pw').value;
     if(!id || !pw) return;
@@ -23,11 +23,11 @@ async function doLogin() {
         let email = id;
         if (!id.includes('@')) {
             const snap = await db.ref('usernames/' + id.toLowerCase()).once('value');
-            if (!snap.exists()) return alert("User not found");
+            if (!snap.exists()) return alert("Username not found");
             email = snap.val().email;
         }
         await auth.signInWithEmailAndPassword(email, pw);
-    } catch (e) { alert("Login Failed"); }
+    } catch (e) { alert("Login Error: " + e.message); }
 }
 
 auth.onAuthStateChanged(u => {
@@ -59,44 +59,66 @@ function updateUI() {
     renderSchedule();
 }
 
-// --- 2. EDIT LOGIC (ตรงนี้ที่ต้องการเพิ่ม) ---
-
+// --- PROFILE EDIT (FULL SPEC) ---
 async function editProfile() {
     const { value: res } = await Swal.fire({
-        title: 'Edit Profile',
+        title: 'Edit My Profile',
         background: '#1c1c1e', color: '#fff',
         html: `
-            <div class="mb-4" onclick="document.getElementById('file-input').click()">
-                <img src="${userData.photoURL || ''}" class="w-20 h-20 rounded-full mx-auto border-2 border-blue-500 object-cover">
+            <div class="mb-6" onclick="document.getElementById('file-input').click()">
+                <img src="${userData.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="w-24 h-24 rounded-full mx-auto border-4 border-blue-500/50 object-cover cursor-pointer">
+                <p class="text-[9px] mt-2 opacity-50 uppercase font-bold">Tap to change photo</p>
             </div>
-            <input id="sw-name" class="w-full bg-white/5 p-4 rounded-xl" value="${userData.displayName || ''}" placeholder="Display Name">`,
+            <div class="space-y-2 text-left">
+                <label class="text-[9px] opacity-30 font-bold ml-2 uppercase">Basic Info</label>
+                <input id="sw-name" class="w-full bg-white/5 p-4 rounded-xl outline-none" value="${userData.displayName || ''}" placeholder="Display Name">
+                <input id="sw-phone" class="w-full bg-white/5 p-4 rounded-xl outline-none" value="${userData.phone || ''}" placeholder="Phone Number">
+                
+                <label class="text-[9px] opacity-30 font-bold ml-2 uppercase">Account Info</label>
+                <input id="sw-email" class="w-full bg-white/5 p-4 rounded-xl outline-none" value="${currentUser.email}" readonly opacity-50>
+                <input id="sw-pass" type="password" class="w-full bg-white/5 p-4 rounded-xl outline-none" placeholder="New Password (Leave blank to keep)">
+                
+                <label class="text-[9px] opacity-30 font-bold ml-2 uppercase">Financial Info (Private)</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <input id="sw-sal" type="number" class="bg-white/5 p-4 rounded-xl outline-none" value="${userData.salary || 0}" placeholder="Salary">
+                    <input id="sw-ot" type="number" class="bg-white/5 p-4 rounded-xl outline-none" value="${userData.otRate || 0}" placeholder="OT Rate/Hr">
+                </div>
+            </div>`,
         showCancelButton: true,
-        confirmButtonText: 'Save',
-        preConfirm: () => ({ displayName: document.getElementById('sw-name').value })
+        confirmButtonText: 'Save All',
+        preConfirm: () => {
+            return {
+                displayName: document.getElementById('sw-name').value,
+                phone: document.getElementById('sw-phone').value,
+                salary: parseFloat(document.getElementById('sw-sal').value) || 0,
+                otRate: parseFloat(document.getElementById('sw-ot').value) || 0,
+                newPass: document.getElementById('sw-pass').value
+            }
+        }
     });
-    if (res) await db.ref('users/' + currentUser.uid).update(res);
+
+    if (res) {
+        // Update Firebase DB
+        const updates = { 
+            displayName: res.displayName, 
+            phone: res.phone, 
+            salary: res.salary, 
+            otRate: res.otRate 
+        };
+        await db.ref('users/' + currentUser.uid).update(updates);
+
+        // Update Password if provided
+        if (res.newPass) {
+            currentUser.updatePassword(res.newPass).then(() => {
+                Swal.fire({ title: 'Success', text: 'Profile & Password updated', icon: 'success', background: '#1c1c1e', color: '#fff' });
+            }).catch(e => alert(e.message));
+        } else {
+            Swal.fire({ title: 'Success', text: 'Profile updated', icon: 'success', background: '#1c1c1e', color: '#fff' });
+        }
+    }
 }
 
-// Admin จัดการคนอื่น
-async function adminEdit(uid) {
-    const snap = await db.ref('users/' + uid).once('value');
-    const u = snap.val();
-    const { value: res } = await Swal.fire({
-        title: 'Manage Employee',
-        background: '#1c1c1e', color: '#fff',
-        html: `
-            <input id="ad-sal" type="number" class="w-full bg-white/5 p-4 rounded-xl mb-2" value="${u.salary || 15000}" placeholder="Salary">
-            <select id="ad-role" class="w-full bg-white/5 p-4 rounded-xl text-white">
-                <option value="staff" ${u.role==='staff'?'selected':''}>Staff</option>
-                <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
-            </select>`,
-        showCancelButton: true,
-        preConfirm: () => ({ salary: parseFloat(document.getElementById('ad-sal').value), role: document.getElementById('ad-role').value })
-    });
-    if (res) await db.ref('users/' + uid).update(res);
-}
-
-// แก้ไขวันที่ในปฏิทิน (เพิ่มปุ่มลบ)
+// --- CALENDAR LOGIC (NEW) ---
 async function manageLog(ds) {
     const log = logs.find(l => l.date === ds);
     const { value: action } = await Swal.fire({
@@ -104,7 +126,7 @@ async function manageLog(ds) {
         background: '#1c1c1e', color: '#fff',
         showDenyButton: !!log,
         showCancelButton: true,
-        confirmButtonText: log ? 'Update' : 'Add',
+        confirmButtonText: log ? 'Update Entry' : 'Add Entry',
         denyButtonText: 'Delete',
         denyButtonColor: '#ef4444'
     });
@@ -112,11 +134,30 @@ async function manageLog(ds) {
     if (action === true) {
         const { value: res } = await Swal.fire({
             background: '#1c1c1e', color: '#fff',
+            title: 'Shift Details',
             html: `
-                <input id="sw-in" type="time" class="w-full bg-white/5 p-3 mb-2 rounded-xl" value="${log ? log.checkIn : '08:30'}">
-                <input id="sw-out" type="time" class="w-full bg-white/5 p-3 mb-2 rounded-xl" value="${log ? log.checkOut : '17:30'}">
-                <input id="sw-bill" type="number" class="w-full bg-white/5 p-3 rounded-xl" value="${log ? (log.delivery || 0) : 0}">`,
-            preConfirm: () => ({ checkIn: document.getElementById('sw-in').value, checkOut: document.getElementById('sw-out').value, delivery: parseInt(document.getElementById('sw-bill').value) || 0 })
+                <div class="space-y-3 text-left">
+                    <div>
+                        <label class="text-[9px] opacity-30 font-bold ml-1 uppercase">Time In/Out</label>
+                        <div class="grid grid-cols-2 gap-2 mt-1">
+                            <input id="sw-in" type="time" class="bg-white/5 p-3 rounded-xl" value="${log ? log.checkIn : '08:30'}">
+                            <input id="sw-out" type="time" class="bg-white/5 p-3 rounded-xl" value="${log ? log.checkOut : '17:30'}">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[9px] opacity-30 font-bold ml-1 uppercase">OT Hours & Bills</label>
+                        <div class="grid grid-cols-2 gap-2 mt-1">
+                            <input id="sw-oth" type="number" step="0.5" class="bg-white/5 p-3 rounded-xl" placeholder="OT Hours" value="${log ? (log.otHours || 0) : 0}">
+                            <input id="sw-bill" type="number" class="bg-white/5 p-3 rounded-xl" placeholder="Bills" value="${log ? (log.delivery || 0) : 0}">
+                        </div>
+                    </div>
+                </div>`,
+            preConfirm: () => ({
+                checkIn: document.getElementById('sw-in').value,
+                checkOut: document.getElementById('sw-out').value,
+                otHours: parseFloat(document.getElementById('sw-oth').value) || 0,
+                delivery: parseInt(document.getElementById('sw-bill').value) || 0
+            })
         });
         if (res) {
             if (log) await db.ref(`attendance/${currentUser.uid}/${log.id}`).update(res);
@@ -127,23 +168,7 @@ async function manageLog(ds) {
     }
 }
 
-// --- 3. DISPLAY LOGIC (เหมือนเดิมที่คุณชอบ) ---
-
-function loadAdmin() {
-    const list = document.getElementById('user-list');
-    db.ref('users').on('value', s => {
-        const users = s.val(); if(!users) return;
-        list.innerHTML = Object.keys(users).map(uid => `
-            <div onclick="adminEdit('${uid}')" class="glass-card p-4 flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <img src="${users[uid].photoURL || ''}" class="w-10 h-10 rounded-full bg-zinc-800">
-                    <p class="font-bold text-sm">${users[uid].displayName || users[uid].username}</p>
-                </div>
-                <i class="fa-solid fa-chevron-right opacity-20"></i>
-            </div>`).join('');
-    });
-}
-
+// --- REMAINDING LOGIC (STAY SAME BUT CLEANER) ---
 function renderCal() {
     const y = viewDate.getFullYear(), m = viewDate.getMonth();
     document.getElementById('mon-view').innerText = `${MONTHS[m]} ${y + 543}`;
@@ -154,30 +179,19 @@ function renderCal() {
     for (let d = 1; d <= total; d++) {
         const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         const log = logs.find(l => l.date === ds);
-        grid.innerHTML += `<div onclick="manageLog('${ds}')" class="day-node ${log ? (log.isOff ? 'st-off' : 'st-normal') : 'bg-white/5'}">${d}</div>`;
+        let cls = log ? (log.isOff ? 'st-off' : 'st-normal') : 'bg-white/5 opacity-50';
+        grid.innerHTML += `<div onclick="manageLog('${ds}')" class="day-node ${cls}">${d}</div>`;
     }
-}
-
-function renderSchedule() {
-    const list = document.getElementById('week-list');
-    if(!list) return;
-    list.innerHTML = DAYS.map(d => {
-        const s = (userData.shifts && userData.shifts[d]) ? userData.shifts[d] : { in: '08:30', out: '17:30', isOff: false };
-        return `<div class="glass-card p-4 flex justify-between items-center ${s.isOff ? 'opacity-30' : ''}">
-            <div class="font-bold text-xs">${d}</div>
-            <div class="flex gap-2 items-center">
-                <input type="time" class="time-pill" value="${s.in}" onchange="db.ref('users/${currentUser.uid}/shifts/${d}/in').set(this.value)">
-                <button onclick="db.ref('users/${currentUser.uid}/shifts/${d}/isOff').set(${!s.isOff})" class="p-2 text-blue-500"><i class="fa-solid ${s.isOff ? 'fa-toggle-off' : 'fa-toggle-on'}"></i></button>
-            </div></div>`;
-    }).join('');
 }
 
 function calculate() {
     const daily = (userData.salary || 15000) / 30;
+    const otRate = userData.otRate || 0;
     let total = 0, todayB = 0;
     logs.forEach(l => {
         if (new Date(l.date).getMonth() === new Date().getMonth()) {
             if (l.checkIn && !l.isOff) total += daily;
+            total += (l.otHours || 0) * otRate;
             total += (l.delivery || 0) * 15;
             if (l.date === new Date().toISOString().split('T')[0]) todayB = l.delivery || 0;
         }
@@ -186,6 +200,7 @@ function calculate() {
     document.getElementById('today-bills').innerText = todayB;
 }
 
+// Utils
 function go(id, btn) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(id).classList.add('active');
@@ -194,13 +209,9 @@ function go(id, btn) {
 }
 function moveMonth(v) { viewDate.setMonth(viewDate.getMonth() + v); renderCal(); }
 function confirmLogout() { if(confirm("Logout?")) auth.signOut(); }
-function addDelivery(val) {
-    const d = new Date().toISOString().split('T')[0], log = logs.find(l => l.date === d);
-    if(log) db.ref(`attendance/${currentUser.uid}/${log.id}`).update({ delivery: (log.delivery || 0) + val });
-}
 function tapIn() {
     const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
-    if(!logs.find(l => l.date === d)) db.ref(`attendance/${currentUser.uid}`).push({ date: d, checkIn: t, checkOut: '', isOff: false, delivery: 0 });
+    if(!logs.find(l => l.date === d)) db.ref(`attendance/${currentUser.uid}`).push({ date: d, checkIn: t, checkOut: '', isOff: false, delivery: 0, otHours: 0 });
 }
 function tapOut() {
     const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
@@ -215,4 +226,31 @@ async function handleFileUpload(input) {
         const res = await r.json();
         if (res.success) await db.ref('users/' + currentUser.uid).update({ photoURL: res.data.url });
     } catch (e) { alert("Upload Failed"); }
+}
+function renderSchedule() {
+    const list = document.getElementById('week-list');
+    if(!list) return;
+    list.innerHTML = DAYS.map(d => {
+        const s = (userData.shifts && userData.shifts[d]) ? userData.shifts[d] : { in: '08:30', out: '17:30', isOff: false };
+        return `<div class="glass-card p-4 flex justify-between items-center ${s.isOff ? 'opacity-30' : ''}">
+            <div class="font-bold text-[11px] uppercase tracking-tighter">${d}</div>
+            <div class="flex gap-2 items-center">
+                <input type="time" class="time-pill" value="${s.in}" onchange="db.ref('users/${currentUser.uid}/shifts/${d}/in').set(this.value)">
+                <button onclick="db.ref('users/${currentUser.uid}/shifts/${d}/isOff').set(${!s.isOff})" class="p-2 text-blue-500 active:scale-90 transition"><i class="fa-solid ${s.isOff ? 'fa-toggle-off opacity-30' : 'fa-toggle-on'} text-xl"></i></button>
+            </div></div>`;
+    }).join('');
+}
+function loadAdmin() {
+    const l = document.getElementById('user-list');
+    db.ref('users').on('value', s => {
+        const u = s.val(); if(!u) return;
+        l.innerHTML = Object.keys(u).map(k => `
+            <div class="glass-card p-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <img src="${u[k].photoURL || ''}" class="w-10 h-10 rounded-full bg-zinc-800 object-cover">
+                    <p class="font-bold text-sm">${u[k].displayName || u[k].username}</p>
+                </div>
+                <button onclick="adminEdit('${k}')" class="text-blue-500 text-xs font-bold uppercase">Manage</button>
+            </div>`).join('');
+    });
 }
