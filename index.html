@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>IMS-Workflow</title>
+    <title>IMS-Workflow Pro</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -11,9 +12,10 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="./style.css">
+    
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-black text-white overflow-hidden h-screen font-[Anuphan]">
+<body class="overflow-hidden h-screen">
 
     <div id="auth-ui" class="p-8 pt-24 space-y-8 h-full overflow-y-auto">
         <div id="login-box" class="space-y-6">
@@ -47,12 +49,19 @@
                         <p class="text-xs opacity-40 uppercase">ยินดีต้อนรับ</p>
                         <h2 id="u-display" class="text-xl font-bold">...</h2>
                     </div>
-                    <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-10 h-10 rounded-full">
+                    <div class="flex items-center gap-3">
+                        <button onclick="editProfile()" class="text-zinc-500 bg-white/5 w-10 h-10 rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-cog"></i>
+                        </button>
+                        <img id="u-photo" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-10 h-10 rounded-full border border-white/10 object-cover">
+                    </div>
                 </div>
+                
                 <div class="text-center my-12">
-                    <p class="text-[10px] opacity-30 uppercase font-bold tracking-widest">ยอดรายได้เดือนนี้</p>
+                    <p class="text-[10px] opacity-30 uppercase font-bold tracking-widest">ยอดรายได้ประมาณการเดือนนี้</p>
                     <h1 class="text-5xl font-bold mt-2">฿<span id="salary-view">0.00</span></h1>
                 </div>
+
                 <div class="grid grid-cols-2 gap-4">
                     <button onclick="tapIn()" class="h-44 glass-card bg-blue-600/10 flex flex-col items-center justify-center gap-4 active:scale-95 transition">
                         <i class="fa-solid fa-bolt text-3xl text-blue-500"></i>
@@ -64,6 +73,7 @@
                     </button>
                 </div>
             </section>
+
             <section id="p-week" class="page"><div id="week-list" class="space-y-3 mt-10"></div></section>
             <section id="p-cal" class="page">
                 <div class="flex justify-between items-center mb-6 mt-10">
@@ -77,13 +87,17 @@
                 <div class="glass-card p-4"><div id="cal-grid" class="grid grid-cols-7 gap-2"></div></div>
             </section>
         </main>
+
+        <input type="file" id="file-input" accept="image/*" class="hidden" onchange="handleFileUpload(this)">
+
         <nav class="fixed bottom-8 left-6 right-6 glass-card p-2 flex justify-around items-center">
             <button onclick="go('p-home', this)" class="nav-btn active p-4 text-zinc-500"><i class="fa-solid fa-house"></i></button>
             <button onclick="go('p-week', this)" class="nav-btn p-4 text-zinc-500"><i class="fa-solid fa-clock"></i></button>
             <button onclick="go('p-cal', this)" class="nav-btn p-4 text-zinc-500"><i class="fa-solid fa-calendar-alt"></i></button>
-            <button onclick="auth.signOut()" class="p-4 text-red-900/50"><i class="fa-solid fa-power-off"></i></button>
+            <button onclick="confirmLogout()" class="p-4 text-red-900/50"><i class="fa-solid fa-power-off"></i></button>
         </nav>
     </div>
-    <script src="./app.js"></script>
+
+    <script src="app.js"></script>
 </body>
 </html>
