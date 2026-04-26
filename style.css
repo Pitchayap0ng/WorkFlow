@@ -1,12 +1,65 @@
 @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;600&display=swap');
-body { -webkit-tap-highlight-color: transparent; }
-.glass-card { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px); border-radius: 28px; }
+
+body { 
+    font-family: 'Anuphan', sans-serif; 
+    background: #000; 
+    color: white; 
+    -webkit-tap-highlight-color: transparent; 
+}
+
+.glass-card { 
+    background: rgba(255, 255, 255, 0.05); 
+    border: 1px solid rgba(255, 255, 255, 0.1); 
+    backdrop-filter: blur(15px); 
+    border-radius: 28px; 
+}
+
 .page { display: none; }
-.page.active { display: block; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.page.active { 
+    display: block; 
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+}
+
+@keyframes slideUp { 
+    from { opacity: 0; transform: translateY(20px); } 
+    to { opacity: 1; transform: translateY(0); } 
+}
+
 .nav-btn { color: #52525b; transition: 0.3s; }
 .nav-btn.active { color: #3b82f6; transform: translateY(-4px); }
-.st-normal { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #3b82f6; }
-.st-off { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; }
-.day-node { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 14px; font-size: 11px; font-weight: 600; cursor: pointer; }
-.time-pill { background: rgba(255, 255, 255, 0.08); border: none; color: #fff; padding: 8px 12px; border-radius: 12px; font-size: 11px; outline: none; }
+
+.st-normal { 
+    background: rgba(59, 130, 246, 0.1); 
+    border: 1px solid rgba(59, 130, 246, 0.3); 
+    color: #3b82f6; 
+}
+
+.st-off { 
+    background: rgba(239, 68, 68, 0.1); 
+    border: 1px solid rgba(239, 68, 68, 0.3); 
+    color: #ef4444; 
+}
+
+.day-node { 
+    aspect-ratio: 1; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    border-radius: 14px; 
+    font-size: 11px; 
+    font-weight: 600; 
+    cursor: pointer; 
+}
+
+.time-pill { 
+    background: rgba(255, 255, 255, 0.08); 
+    border: none; 
+    color: #fff; 
+    padding: 8px 12px; 
+    border-radius: 12px; 
+    font-size: 11px; 
+    outline: none; 
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 0px; background: transparent; }
