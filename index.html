@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CleanFlow Pro - Night Shift Ready</title>
+    <title>CleanFlow - Locked & Loaded</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -13,20 +13,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;600;700&display=swap');
-        :root { --ios-blue: #007AFF; --ios-green: #34C759; --ios-orange: #FF9500; --ios-gray: #3a3a3c; }
+        :root { --ios-blue: #007AFF; --ios-green: #34C759; --ios-orange: #FF9500; }
         body { font-family: 'Anuphan', sans-serif; background-color: #000; color: #fff; margin: 0; overflow: hidden; height: 100vh; }
         .page { display: none; height: 100vh; overflow-y: auto; padding-bottom: 140px; }
         .page.active { display: block; animation: slideUp 0.4s ease; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .glass-card { background: rgba(28, 28, 30, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-        .day-node { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 14px; font-size: 14px; border: 1px solid transparent; position: relative; }
+        .day-node { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 14px; font-size: 13px; border: 1px solid transparent; }
         .status-normal { background: rgba(52, 199, 89, 0.15); color: #34C759; }
         .status-late { background: rgba(255, 149, 0, 0.15); color: #FF9500; }
         .status-off { background: rgba(255, 255, 255, 0.05); color: rgba(255,255,255,0.3); }
         .day-today { border: 2px solid var(--ios-blue) !important; }
-        .off-dot { width: 4px; height: 4px; background: currentColor; border-radius: 50%; margin-top: 2px; }
-        input[type="time"] { background: transparent; border: none; color: var(--ios-blue); font-weight: bold; outline: none; }
+        input[type="time"] { background: transparent; border: none; color: var(--ios-blue); font-weight: bold; outline: none; text-align: center; }
     </style>
 </head>
 <body>
@@ -35,28 +34,35 @@
         
         <section id="page-home" class="page active pt-8">
             <header class="mb-10 text-center">
-                <p class="text-[11px] font-bold opacity-30 uppercase tracking-[0.2em]">Estimate Net Salary</p>
+                <p class="text-[10px] font-bold opacity-30 uppercase tracking-[0.2em]">Estimate Net Salary</p>
                 <h1 class="text-5xl font-bold mt-2">฿<span id="salaryDisplay">0.00</span></h1>
             </header>
             <div class="grid gap-4">
                 <button onclick="checkIn()" class="h-44 glass-card bg-gradient-to-br from-blue-600/20 to-blue-400/10 flex flex-col items-center justify-center gap-3">
                     <div class="w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center shadow-lg"><i class="fa-solid fa-fingerprint text-2xl"></i></div>
-                    <span class="text-xs font-bold tracking-widest">ลงเวลาเข้างาน</span>
+                    <span class="text-xs font-bold tracking-widest uppercase">Check In</span>
                 </button>
                 <button onclick="checkOut()" class="h-24 glass-card flex items-center justify-center gap-3 opacity-60">
-                    <i class="fa-solid fa-power-off"></i>
-                    <span class="text-xs font-bold tracking-widest uppercase">ลงเวลาออก</span>
+                    <i class="fa-solid fa-moon"></i>
+                    <span class="text-xs font-bold tracking-widest uppercase">Check Out</span>
                 </button>
             </div>
         </section>
 
+        <section id="page-weekly" class="page pt-8">
+            <h2 class="text-2xl font-bold mb-2">ตารางสัปดาห์นี้</h2>
+            <p class="text-[10px] opacity-40 mb-6 uppercase">ระบุเวลาตามกะงานที่ได้รับมอบหมาย</p>
+            <div id="weeklyList" class="space-y-3">
+                </div>
+        </section>
+
         <section id="page-calendar" class="page pt-8">
-            <div class="flex justify-between items-center mb-6 px-2">
-                <h2 class="text-2xl font-bold">ปฏิทินงาน</h2>
-                <div class="flex items-center gap-4 glass-card px-4 py-2">
-                    <button onclick="changeMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
-                    <span id="monthDisplay" class="text-xs font-bold min-w-[90px] text-center"></span>
-                    <button onclick="changeMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">ปฏิทิน</h2>
+                <div class="flex items-center gap-3 glass-card px-3 py-1.5">
+                    <button onclick="changeMonth(-1)"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                    <span id="monthDisplay" class="text-xs font-bold min-w-[70px] text-center"></span>
+                    <button onclick="changeMonth(1)"><i class="fa-solid fa-chevron-right text-xs"></i></button>
                 </div>
             </div>
             <div class="glass-card p-4">
@@ -65,25 +71,13 @@
                 </div>
                 <div id="calendarDays" class="calendar-grid"></div>
             </div>
-            <div class="mt-6 flex justify-center gap-6 text-[10px] font-bold opacity-40 uppercase">
-                <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-green-500"></div> ปกติ</div>
-                <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-orange-500"></div> สาย</div>
-                <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-white/20"></div> วันหยุด</div>
-            </div>
         </section>
 
         <section id="page-settings" class="page pt-8">
-            <h2 class="text-2xl font-bold mb-6">Settings</h2>
-            <div class="space-y-4">
-                <div class="glass-card p-5">
-                    <p class="text-[10px] font-bold opacity-30 uppercase mb-2">Security (รหัสผ่าน 4 หลัก)</p>
-                    <input type="password" id="appPass" maxlength="4" placeholder="ตั้งรหัสผ่านแก้ไขข้อมูล" onchange="saveConfig()" class="w-full bg-transparent text-xl font-bold border-b border-white/10 py-2 outline-none">
-                </div>
-                <div class="glass-card p-5">
-                    <p class="text-[10px] font-bold opacity-30 uppercase mb-2">ค่าตอบแทน</p>
-                    <input type="number" id="baseSalary" onchange="saveConfig()" class="w-full bg-transparent text-xl font-bold border-b border-white/10 py-2 outline-none">
-                </div>
-                <div id="shiftList" class="space-y-2"></div>
+            <h2 class="text-2xl font-bold mb-6">ตั้งค่า</h2>
+            <div class="glass-card p-6">
+                <label class="text-[10px] font-bold opacity-30 uppercase tracking-widest">ฐานเงินเดือน</label>
+                <input type="number" id="baseSalary" onchange="saveSalary()" class="w-full bg-transparent text-2xl font-bold border-b border-white/10 py-3 outline-none">
             </div>
         </section>
 
@@ -91,11 +85,15 @@
 
     <nav class="fixed bottom-8 left-6 right-6 glass-card p-2 flex justify-around items-center shadow-2xl z-50">
         <button onclick="switchPage('page-home', this)" class="p-4 active text-blue-500"><i class="fa-solid fa-house"></i></button>
-        <button onclick="switchPage('page-calendar', this)" class="p-4 text-zinc-500"><i class="fa-solid fa-calendar-days"></i></button>
+        <button onclick="switchPage('page-weekly', this)" class="p-4 text-zinc-500"><i class="fa-solid fa-calendar-week"></i></button>
+        <button onclick="switchPage('page-calendar', this)" class="p-4 text-zinc-500"><i class="fa-solid fa-calendar-alt"></i></button>
         <button onclick="switchPage('page-settings', this)" class="p-4 text-zinc-500"><i class="fa-solid fa-gear"></i></button>
     </nav>
 
     <script>
+        // *** SECURITY: แก้ไขรหัสผ่าน 4 หลักตรงนี้ ***
+        const MASTER_PASSWORD = "1234"; 
+
         const firebaseConfig = {
             apiKey: "AIzaSyA11zPbXEFs-sdIHKaxhkprkoGSGP1whfg",
             authDomain: "ims-fei.firebaseapp.com",
@@ -108,9 +106,10 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        const TH_DAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
         let logs = [];
         let viewDate = new Date();
-        let config = JSON.parse(localStorage.getItem('cf_pro_v3')) || { salary: 15000, shifts: {}, pass: "" };
+        let config = JSON.parse(localStorage.getItem('cf_locked')) || { salary: 15000, shifts: {} };
 
         db.ref('attendance').on('value', snap => {
             const data = snap.val();
@@ -118,13 +117,13 @@
             renderAll();
         });
 
-        // --- Logic สำหรับ กะดึก & คำนวณสาย ---
-        function calculateStats(planIn, planOut, actualIn, actualOut) {
-            let late = diffMins(planIn, actualIn);
+        // --- Logic: Night Shift & Stats ---
+        function calculateStats(pIn, pOut, aIn, aOut) {
+            let late = diffMins(pIn, aIn);
             let ot = 0;
-            if (actualOut) {
-                let otMins = diffMins(planOut, actualOut);
-                if (otMins < -600) otMins += 1440; // แก้ปัญหากะดึกที่เลิกงานเช้าอีกวัน
+            if (aOut) {
+                let otMins = diffMins(pOut, aOut);
+                if (otMins < -600) otMins += 1440; // ข้ามวัน
                 ot = otMins > 60 ? Math.floor(otMins / 60) : 0;
             }
             return { late: late > 0 ? late : 0, ot };
@@ -135,38 +134,41 @@
             return (h2 * 60 + m2) - (h1 * 60 + m1);
         }
 
-        // --- ระบบแก้ไขข้อมูล (ต้องใส่รหัส) ---
-        async function editDay(date) {
-            // 1. ตรวจสอบรหัสผ่านก่อน
-            if (config.pass) {
-                const { value: typedPass } = await Swal.fire({
-                    title: 'ยืนยันตัวตน',
-                    input: 'password',
-                    inputPlaceholder: 'รหัสผ่าน 4 หลัก',
-                    background: '#1c1c1e', color: '#fff', confirmButtonColor: '#007AFF'
-                });
-                if (typedPass !== config.pass) return toast("รหัสผ่านไม่ถูกต้อง", "error");
+        // --- Auth Check ---
+        async function checkAuth() {
+            const { value: pass } = await Swal.fire({
+                title: 'ใส่รหัสผ่านเพื่อแก้ไข',
+                input: 'password',
+                inputAttributes: { maxlength: 4 },
+                background: '#1c1c1e', color: '#fff', confirmButtonColor: '#007AFF'
+            });
+            if (pass !== MASTER_PASSWORD) {
+                toast("รหัสผ่านไม่ถูกต้อง!", "error");
+                return false;
             }
+            return true;
+        }
 
+        // --- Actions ---
+        async function editDay(date) {
+            if (!await checkAuth()) return;
             const log = logs.find(l => l.date === date) || { date, checkIn: "", checkOut: "", planIn: "08:30", planOut: "17:30", isOff: false };
-
+            
             const { value: form } = await Swal.fire({
                 title: 'แก้ไขข้อมูลวันที่ ' + date,
                 html: `
                     <div class="text-left space-y-3 p-2">
-                        <label class="flex items-center gap-2 mb-4"><input type="checkbox" id="isOff" ${log.isOff ? 'checked' : ''}> วันนี้เป็นวันหยุด (OFF)</label>
+                        <label class="flex items-center gap-2 mb-2"><input type="checkbox" id="isOff" ${log.isOff ? 'checked' : ''}> วันหยุด (OFF)</label>
                         <div class="grid grid-cols-2 gap-2">
-                            <div><p class="text-[10px] opacity-40">กะเริ่ม</p><input id="pIn" type="time" class="w-full bg-zinc-800 p-2 rounded-lg" value="${log.planIn}"></div>
-                            <div><p class="text-[10px] opacity-40">กะเลิก</p><input id="pOut" type="time" class="w-full bg-zinc-800 p-2 rounded-lg" value="${log.planOut}"></div>
+                            <div><p class="text-[9px] opacity-40">กะเริ่ม</p><input id="pIn" type="time" class="w-full bg-zinc-800 p-2 rounded-lg" value="${log.planIn}"></div>
+                            <div><p class="text-[9px] opacity-40">กะเลิก</p><input id="pOut" type="time" class="w-full bg-zinc-800 p-2 rounded-lg" value="${log.planOut}"></div>
                         </div>
                         <div class="grid grid-cols-2 gap-2">
-                            <div><p class="text-[10px] opacity-40">เข้าจริง</p><input id="aIn" type="time" class="w-full bg-zinc-800 p-2 rounded-lg" value="${log.checkIn}"></div>
-                            <div><p class="text-[10px] opacity-40">ออกจริง</p><input id="aOut" type="time" class="w-full bg-zinc-800 p-2 rounded-lg" value="${log.checkOut}"></div>
+                            <div><p class="text-[9px] opacity-40">เข้าจริง</p><input id="aIn" type="time" class="w-full bg-zinc-800 p-2 rounded-lg" value="${log.checkIn}"></div>
+                            <div><p class="text-[9px] opacity-40">ออกจริง</p><input id="aOut" type="time" class="w-full bg-zinc-800 p-2 rounded-lg" value="${log.checkOut}"></div>
                         </div>
-                        <button onclick="deleteData('${log.id}')" style="color: #ff453a; font-size: 10px; margin-top: 10px;">ลบข้อมูลของวันนี้</button>
+                        <button onclick="deleteRow('${log.id}')" class="text-red-500 text-xs mt-4">ลบข้อมูลของวันนี้</button>
                     </div>`,
-                showCancelButton: true,
-                confirmButtonText: 'บันทึก',
                 preConfirm: () => ({
                     isOff: document.getElementById('isOff').checked,
                     pIn: document.getElementById('pIn').value,
@@ -178,31 +180,23 @@
             });
 
             if (form) {
-                const stats = calculateStats(form.pIn, form.pOut, form.aIn, form.aOut);
-                const data = {
-                    date, isOff: form.isOff,
-                    planIn: form.pIn, planOut: form.pOut,
-                    checkIn: form.aIn, checkOut: form.aOut,
-                    late: form.isOff ? 0 : stats.late,
-                    ot: form.isOff ? 0 : stats.ot
-                };
-
-                if (log.id) db.ref('attendance/' + log.id).update(data);
-                else db.ref('attendance').push(data);
-                toast("บันทึกเรียบร้อย");
+                const s = calculateStats(form.pIn, form.pOut, form.aIn, form.aOut);
+                const d = { ...form, late: form.isOff?0:s.late, ot: form.isOff?0:s.ot, date };
+                if (log.id) db.ref('attendance/'+log.id).update(d);
+                else db.ref('attendance').push(d);
+                toast("บันทึกสำเร็จ");
             }
         }
 
-        function deleteData(id) {
+        function deleteRow(id) {
             if(!id) return;
-            Swal.fire({ title: 'ลบข้อมูล?', icon: 'warning', showCancelButton: true, background: '#1c1c1e', color: '#fff' }).then(r => {
-                if(r.isConfirmed) { db.ref('attendance/'+id).remove(); Swal.close(); }
-            });
+            db.ref('attendance/'+id).remove();
+            Swal.close();
         }
 
-        // --- Render UI ---
+        // --- UI Rendering ---
         function renderAll() {
-            // Salary Calculation (Exclude OFF days)
+            // Salary
             const currentM = new Date().toISOString().slice(0, 7);
             const mData = logs.filter(l => l.date.startsWith(currentM) && !l.isOff);
             const totalOT = mData.reduce((s, l) => s + (l.ot || 0), 0);
@@ -211,41 +205,37 @@
             document.getElementById('salaryDisplay').innerText = net.toLocaleString(undefined, { minimumFractionDigits: 2 });
 
             // Calendar
-            const year = viewDate.getFullYear(), month = viewDate.getMonth();
-            document.getElementById('monthDisplay').innerText = `${year + 543} / ${month + 1}`;
-            const first = new Date(year, month, 1).getDay(), days = new Date(year, month+1, 0).getDate();
+            const y = viewDate.getFullYear(), m = viewDate.getMonth();
+            document.getElementById('monthDisplay').innerText = `${y+543} / ${m+1}`;
+            const first = new Date(y, m, 1).getDay(), days = new Date(y, m+1, 0).getDate();
             const container = document.getElementById('calendarDays');
             container.innerHTML = '';
             for(let i=0; i<first; i++) container.innerHTML += '<div></div>';
             for(let d=1; d<=days; d++) {
-                const dStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 const log = logs.find(l => l.date === dStr);
-                let status = log ? (log.isOff ? 'status-off' : (log.late > 0 ? 'status-late' : 'status-normal')) : '';
+                let st = log ? (log.isOff ? 'status-off' : (log.late > 0 ? 'status-late' : 'status-normal')) : '';
                 const today = new Date().toISOString().split('T')[0] === dStr ? 'day-today' : '';
-                container.innerHTML += `
-                    <div onclick="editDay('${dStr}')" class="day-node ${status} ${today}">
-                        ${d} ${log?.isOff ? '<div class="off-dot"></div>' : ''}
-                    </div>`;
+                container.innerHTML += `<div onclick="editDay('${dStr}')" class="day-node ${st} ${today}">${d}</div>`;
             }
         }
 
-        // --- Check In/Out (Default Logic) ---
         function checkIn() {
             const now = new Date(), date = now.toISOString().split('T')[0], time = now.toTimeString().slice(0, 5);
-            if (logs.find(l => l.date === date)) return toast("วันนี้ลงเวลาไปแล้วครับ", "info");
-            const dayName = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][now.getDay()];
-            const pIn = config.shifts[dayName]?.in || "08:30";
-            const stats = calculateStats(pIn, config.shifts[dayName]?.out || "17:30", time, "");
-            db.ref('attendance').push({ date, checkIn: time, checkOut: "", late: stats.late, ot: 0, planIn: pIn, planOut: config.shifts[dayName]?.out || "17:30", isOff: false });
+            if (logs.find(l => l.date === date)) return toast("วันนี้ลงชื่อแล้ว", "info");
+            const dayName = TH_DAYS[now.getDay()];
+            const pIn = config.shifts[dayName]?.in || "08:30", pOut = config.shifts[dayName]?.out || "17:30";
+            const s = calculateStats(pIn, pOut, time, "");
+            db.ref('attendance').push({ date, checkIn: time, checkOut: "", late: s.late, ot: 0, planIn: pIn, planOut: pOut, isOff: false });
             toast("ลงเวลาเข้างานเรียบร้อยแล้ว");
         }
 
         function checkOut() {
             const now = new Date(), date = now.toISOString().split('T')[0], time = now.toTimeString().slice(0, 5);
             const today = logs.find(l => l.date === date);
-            if (!today) return toast("ยังไม่ได้ลงเวลาเข้า!", "error");
-            const stats = calculateStats(today.planIn, today.planOut, today.checkIn, time);
-            db.ref('attendance/' + today.id).update({ checkOut: time, ot: stats.ot });
+            if (!today) return toast("ยังไม่ได้เข้างาน!", "error");
+            const s = calculateStats(today.planIn, today.planOut, today.checkIn, time);
+            db.ref('attendance/' + today.id).update({ checkOut: time, ot: s.ot });
             toast("ลงเวลาเลิกงานเรียบร้อยแล้ว");
         }
 
@@ -257,19 +247,21 @@
         }
 
         function changeMonth(s) { viewDate.setMonth(viewDate.getMonth() + s); renderAll(); }
-        
-        function saveConfig() {
-            config.salary = document.getElementById('baseSalary').value;
-            config.pass = document.getElementById('appPass').value;
-            localStorage.setItem('cf_pro_v3', JSON.stringify(config));
-            renderAll();
-        }
-
+        function saveSalary() { config.salary = document.getElementById('baseSalary').value; save(); }
+        function saveShift(d, type, v) { if(!config.shifts[d]) config.shifts[d]={}; config.shifts[d][type]=v; save(); }
+        function save() { localStorage.setItem('cf_locked', JSON.stringify(config)); renderAll(); }
         function toast(m, i="success") { Swal.fire({ title: m, icon: i, timer: 1500, showConfirmButton: false, background: '#1c1c1e', color: '#fff' }); }
 
         window.onload = () => {
             document.getElementById('baseSalary').value = config.salary;
-            document.getElementById('appPass').value = config.pass;
+            document.getElementById('weeklyList').innerHTML = TH_DAYS.map(d => `
+                <div class="glass-card p-4 flex justify-between items-center text-sm">
+                    <span class="font-bold">${d}</span>
+                    <div class="flex gap-2">
+                        <input type="time" value="${config.shifts[d]?.in || '08:30'}" onchange="saveShift('${d}', 'in', this.value)">
+                        <input type="time" value="${config.shifts[d]?.out || '17:30'}" onchange="saveShift('${d}', 'out', this.value)">
+                    </div>
+                </div>`).join('');
             renderAll();
         };
     </script>
