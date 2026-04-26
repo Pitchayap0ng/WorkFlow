@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>IMS-Workflow</title>
+    <title>IMS-Workflow Ultimate</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -14,91 +14,94 @@
 </head>
 <body class="bg-black text-white h-screen overflow-hidden">
 
-    <div id="auth-ui" class="p-8 pt-20">
-        <h1 class="text-4xl font-bold text-blue-500 mb-2">IMS-Workflow</h1>
-        <p class="opacity-40 text-sm mb-8">Management System</p>
-        <div class="space-y-3">
-            <input type="text" id="l-id" placeholder="Username / Email" class="w-full bg-[#1c1c1e] p-4 rounded-2xl outline-none border border-white/5">
-            <input type="password" id="l-pw" placeholder="Password" class="w-full bg-[#1c1c1e] p-4 rounded-2xl outline-none border border-white/5">
-            <button onclick="doLogin()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold mt-4">Login</button>
+    <div id="auth-ui" class="p-8 pt-20 h-full overflow-y-auto">
+        <div class="max-w-md mx-auto">
+            <h1 class="text-4xl font-bold text-blue-500 mb-2">IMS-Workflow</h1>
+            <p class="opacity-40 text-sm mb-10 uppercase tracking-widest font-bold">Management System</p>
+            <div class="space-y-4">
+                <input type="text" id="l-id" placeholder="Username / Email" class="w-full bg-[#1c1c1e] p-5 rounded-2xl outline-none border border-white/5 focus:border-blue-500 transition">
+                <input type="password" id="l-pw" placeholder="Password" class="w-full bg-[#1c1c1e] p-5 rounded-2xl outline-none border border-white/5 focus:border-blue-500 transition">
+                <button onclick="doLogin()" class="w-full bg-blue-600 py-5 rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition mt-4">LOGIN</button>
+            </div>
         </div>
     </div>
 
     <div id="app-ui" class="hidden h-full">
-        <main class="px-5 pt-12 h-full overflow-y-auto pb-32">
+        <main class="px-5 pt-12 h-full overflow-y-auto pb-36">
             
             <section id="p-home" class="page active">
-                <div class="flex justify-between items-center mb-8">
+                <div class="flex justify-between items-center mb-10">
                     <div onclick="editProfile()">
-                        <p class="text-[10px] opacity-40 font-bold uppercase tracking-widest">Dashboard</p>
-                        <h2 id="u-display" class="text-2xl font-bold">...</h2>
+                        <p class="text-[10px] opacity-40 font-bold uppercase tracking-[0.2em]">Dashboard</p>
+                        <h2 id="u-display" class="text-2xl font-bold text-white/90">...</h2>
                     </div>
-                    <img id="u-photo" onclick="editProfile()" src="" class="w-12 h-12 rounded-full border-2 border-blue-500/50 object-cover bg-zinc-900">
+                    <img id="u-photo" onclick="editProfile()" src="" class="w-14 h-14 rounded-full border-2 border-blue-500/50 object-cover bg-zinc-900 shadow-xl">
                 </div>
 
-                <div class="text-center mb-8">
-                    <p class="text-[10px] opacity-30 font-bold uppercase">Estimated Income (Incl. OT)</p>
-                    <h1 class="text-5xl font-bold mt-1">฿<span id="salary-view">0.00</span></h1>
+                <div class="text-center mb-10 py-6">
+                    <p class="text-[10px] opacity-30 font-bold uppercase tracking-widest">Estimated Salary (Incl. OT)</p>
+                    <h1 class="text-5xl font-bold mt-2 tracking-tighter text-white">฿<span id="salary-view">0.00</span></h1>
                 </div>
 
-                <div id="rider-card" class="hidden glass-card p-5 mb-6 border-green-500/20">
+                <div id="rider-card" class="hidden glass-card p-6 mb-8 border-green-500/20 bg-green-500/5">
                     <div class="flex justify-between items-center">
-                        <div onclick="editBillsManually()">
-                            <p class="text-[10px] opacity-50 text-green-500 font-bold">TODAY BILLS</p>
-                            <h3 class="text-2xl font-bold"><span id="today-bills">0</span> Bills</h3>
+                        <div>
+                            <p class="text-[10px] opacity-60 text-green-500 font-bold uppercase tracking-widest">Today Delivery</p>
+                            <h3 class="text-3xl font-bold mt-1"><span id="today-bills">0</span> <span class="text-sm opacity-40 font-normal">Bills</span></h3>
                         </div>
-                        <button onclick="addDelivery(1)" class="bg-green-600 w-12 h-12 rounded-2xl flex items-center justify-center active:scale-90 transition"><i class="fa-solid fa-plus"></i></button>
+                        <button onclick="addDelivery(1)" class="bg-green-600 w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition"><i class="fa-solid fa-plus text-xl text-white"></i></button>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
-                    <button onclick="tapIn()" class="h-32 glass-card flex flex-col items-center justify-center gap-2 active:scale-95 transition">
-                        <i class="fa-solid fa-clock text-blue-500 text-2xl"></i><span class="text-[10px] font-bold uppercase">Check In</span>
+                    <button onclick="tapIn()" class="h-36 glass-card flex flex-col items-center justify-center gap-3 active:scale-95 transition bg-blue-500/5 border-blue-500/10">
+                        <i class="fa-solid fa-clock text-3xl text-blue-500"></i><span class="text-[11px] font-bold text-blue-500/80 uppercase tracking-widest">Check In</span>
                     </button>
-                    <button onclick="tapOut()" class="h-32 glass-card flex flex-col items-center justify-center gap-2 active:scale-95 transition">
-                        <i class="fa-solid fa-door-open text-zinc-500 text-2xl"></i><span class="text-[10px] font-bold uppercase">Check Out</span>
+                    <button onclick="tapOut()" class="h-36 glass-card flex flex-col items-center justify-center gap-3 active:scale-95 transition bg-zinc-500/5">
+                        <i class="fa-solid fa-door-open text-3xl text-zinc-500"></i><span class="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">Check Out</span>
                     </button>
                 </div>
             </section>
 
             <section id="p-admin" class="page">
                 <h2 class="text-2xl font-bold mb-6 mt-8">Employee Directory</h2>
-                <div id="user-list" class="space-y-3"></div>
+                <div id="user-list" class="space-y-4"></div>
             </section>
 
             <section id="p-week" class="page">
-                <h2 class="text-2xl font-bold mb-2 mt-8">Weekly Setup</h2>
-                <p class="text-[10px] opacity-40 mb-6 uppercase tracking-widest">Set your default working hours</p>
-                <div id="week-list" class="space-y-3"></div>
+                <div class="flex justify-between items-end mt-8 mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Weekly Setup</h2>
+                        <p class="text-[10px] opacity-40 font-bold uppercase tracking-widest mt-1">Default Working Hours</p>
+                    </div>
+                    <button onclick="saveWeekly()" class="bg-blue-600 text-[11px] font-bold px-5 py-2.5 rounded-xl active:scale-95 transition shadow-lg">SAVE ALL</button>
+                </div>
+                <div id="week-list" class="space-y-4"></div>
             </section>
 
             <section id="p-cal" class="page">
-                <div class="flex justify-between items-center mb-6 mt-8">
-                    <h2 id="mon-view" class="text-xl font-bold">...</h2>
+                <div class="flex justify-between items-center mb-8 mt-8">
+                    <h2 id="mon-view" class="text-xl font-bold text-blue-500">...</h2>
                     <div class="flex gap-4">
-                        <button onclick="moveMonth(-1)" class="opacity-50"><i class="fa-solid fa-chevron-left"></i></button>
-                        <button onclick="moveMonth(1)" class="opacity-50"><i class="fa-solid fa-chevron-right"></i></button>
+                        <button onclick="moveMonth(-1)" class="p-2 opacity-50"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button onclick="moveMonth(1)" class="p-2 opacity-50"><i class="fa-solid fa-chevron-right"></i></button>
                     </div>
                 </div>
-                <div id="cal-grid" class="grid grid-cols-7 gap-2"></div>
-                <div class="mt-8 flex gap-4 text-[9px] font-bold opacity-30 justify-center uppercase tracking-tighter">
-                    <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Work</div>
-                    <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> Day Off</div>
-                    <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-white/10"></span> Empty</div>
-                </div>
+                <div id="cal-grid" class="grid grid-cols-7 gap-3"></div>
             </section>
         </main>
 
-        <nav class="fixed bottom-6 left-6 right-6 glass-card p-2 flex justify-around items-center shadow-2xl">
-            <button onclick="go('p-home', this)" class="nav-btn active p-4"><i class="fa-solid fa-house"></i></button>
-            <button id="nav-admin" onclick="go('p-admin', this)" class="nav-btn p-4 hidden"><i class="fa-solid fa-users-gear"></i></button>
-            <button onclick="go('p-week', this)" class="nav-btn p-4"><i class="fa-solid fa-calendar-check"></i></button>
-            <button onclick="go('p-cal', this)" class="nav-btn p-4"><i class="fa-solid fa-history"></i></button>
-            <button onclick="confirmLogout()" class="p-4 text-red-500/30"><i class="fa-solid fa-power-off"></i></button>
+        <nav class="fixed bottom-8 left-6 right-6 glass-card p-2 flex justify-around items-center shadow-2xl z-50">
+            <button onclick="go('p-home', this)" class="nav-btn active p-4 text-xl"><i class="fa-solid fa-house-chimney"></i></button>
+            <button id="nav-admin" onclick="go('p-admin', this)" class="nav-btn p-4 text-xl hidden"><i class="fa-solid fa-users-gear"></i></button>
+            <button onclick="go('p-week', this)" class="nav-btn p-4 text-xl"><i class="fa-solid fa-calendar-day"></i></button>
+            <button onclick="go('p-cal', this)" class="nav-btn p-4 text-xl"><i class="fa-solid fa-clock-rotate-left"></i></button>
+            <button onclick="confirmLogout()" class="p-4 text-red-500/40 text-xl active:scale-90 transition"><i class="fa-solid fa-power-off"></i></button>
         </nav>
     </div>
 
-    <input type="file" id="file-input" class="hidden" onchange="handleFileUpload(this)">
+    <input type="file" id="file-input" class="hidden" accept="image/*" onchange="handleFileUpload(this)">
+
     <script src="app.js"></script>
 </body>
 </html>
