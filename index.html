@@ -4,37 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>IMS-Workflow Ultimate</title>
+    <link rel="stylesheet" href="style.css">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;600&display=swap');
-        body { font-family: 'Anuphan', sans-serif; background: #000; color: #fff; -webkit-tap-highlight-color: transparent; }
-        .glass-card { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px); border-radius: 28px; }
-        .page { display: none; }
-        .page.active { display: block; animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        .nav-btn.active { color: #3b82f6; transform: translateY(-3px); }
-        .day-node { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; font-size: 11px; font-weight: 600; cursor: pointer; position: relative; }
-        .st-work { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #3b82f6; }
-        .st-off { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; }
-        .bill-badge { font-size: 7px; color: #10b981; position: absolute; top: 2px; right: 4px; }
-        .time-pill { background: rgba(255, 255, 255, 0.08); border: none; color: #fff; padding: 6px 10px; border-radius: 10px; font-size: 11px; outline: none; }
-    </style>
 </head>
-<body class="h-screen overflow-hidden">
+<body class="h-screen overflow-hidden bg-black text-white">
 
-    <div id="auth-ui" class="p-8 pt-20 space-y-8 h-full overflow-y-auto">
-        <div id="login-box" class="space-y-6">
+    <div id="auth-ui" class="p-8 pt-20 h-full overflow-y-auto">
+        <div class="space-y-6">
             <h1 class="text-4xl font-bold text-blue-500">IMS-Workflow</h1>
+            <p class="opacity-40 text-sm">เข้าสู่ระบบเพื่อจัดการงานของคุณ</p>
             <div class="space-y-3">
                 <input type="text" id="l-id" placeholder="Username หรือ อีเมล" class="w-full bg-[#1c1c1e] p-4 rounded-2xl outline-none border border-white/5 focus:border-blue-500 transition">
                 <input type="password" id="l-pw" placeholder="รหัสผ่าน" class="w-full bg-[#1c1c1e] p-4 rounded-2xl outline-none border border-white/5 focus:border-blue-500 transition">
             </div>
-            <button onclick="doLogin()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition">เข้าสู่ระบบ</button>
+            <button onclick="doLogin()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold shadow-lg active:scale-95 transition">เข้าสู่ระบบ</button>
         </div>
     </div>
 
@@ -43,11 +32,11 @@
             
             <section id="p-home" class="page active">
                 <div class="flex justify-between items-center mb-8">
-                    <div>
-                        <p class="text-[10px] opacity-40 uppercase font-bold tracking-widest">Employee Dashboard</p>
+                    <div onclick="editProfile()">
+                        <p class="text-[10px] opacity-40 uppercase font-bold tracking-widest">Dashboard</p>
                         <h2 id="u-display" class="text-2xl font-bold">...</h2>
                     </div>
-                    <img id="u-photo" onclick="editProfile()" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-12 h-12 rounded-full border-2 border-blue-500/50 object-cover cursor-pointer">
+                    <img id="u-photo" onclick="editProfile()" src="" class="w-12 h-12 rounded-full border-2 border-blue-500/50 object-cover bg-zinc-800">
                 </div>
 
                 <div class="text-center mb-8">
@@ -57,11 +46,11 @@
 
                 <div id="rider-card" class="hidden glass-card p-5 mb-6 border-green-500/20">
                     <div class="flex justify-between items-center">
-                        <div onclick="editBills()">
-                            <p class="text-[10px] opacity-50 uppercase font-bold text-green-500">บิลวันนี้ (แตะเพื่อพิมพ์จำนวน)</p>
+                        <div onclick="editBillsManually()">
+                            <p class="text-[10px] opacity-50 uppercase font-bold text-green-500">บิลวันนี้ (แตะเพื่อแก้ไข)</p>
                             <h3 class="text-2xl font-bold"><span id="today-bills">0</span> บิล</h3>
                         </div>
-                        <button onclick="addDelivery(1)" class="bg-green-600 w-12 h-12 rounded-2xl flex items-center justify-center active:scale-90 transition"><i class="fa-solid fa-motorcycle"></i></button>
+                        <button onclick="addDelivery(1)" class="bg-green-600 w-12 h-12 rounded-2xl flex items-center justify-center active:scale-90 transition"><i class="fa-solid fa-plus text-xl"></i></button>
                     </div>
                 </div>
 
@@ -76,19 +65,12 @@
             </section>
 
             <section id="p-admin" class="page">
-                <div class="mt-8 mb-6">
-                    <h2 class="text-3xl font-bold">Admin Panel</h2>
-                    <p class="text-xs opacity-40 uppercase tracking-tighter">จัดการสิทธิ์และข้อมูลพนักงาน</p>
-                </div>
-                <div id="user-list" class="space-y-3 pb-10">
-                    </div>
+                <div class="mt-8 mb-6"><h2 class="text-3xl font-bold">จัดการพนักงาน</h2></div>
+                <div id="user-list" class="space-y-3 pb-10"></div>
             </section>
 
             <section id="p-week" class="page">
-                <div class="mt-8 mb-6">
-                    <h2 class="text-2xl font-bold">ตารางงานรายสัปดาห์</h2>
-                    <p class="text-xs opacity-40">ตั้งค่าวันหยุดและเวลาทำงานปกติ</p>
-                </div>
+                <div class="mt-8 mb-6"><h2 class="text-2xl font-bold">ตารางงานรายสัปดาห์</h2></div>
                 <div id="week-list" class="space-y-3"></div>
             </section>
 
@@ -100,20 +82,21 @@
                         <button onclick="moveMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
                     </div>
                 </div>
-                <div id="cal-grid" class="grid grid-cols-7 gap-2 mb-10"></div>
+                <div id="cal-grid" class="grid grid-cols-7 gap-2"></div>
             </section>
         </main>
 
         <nav class="fixed bottom-6 left-6 right-6 glass-card p-2 flex justify-around items-center shadow-2xl">
             <button onclick="go('p-home', this)" class="nav-btn active p-4 text-xl"><i class="fa-solid fa-house"></i></button>
             <button id="nav-admin" onclick="go('p-admin', this)" class="nav-btn p-4 text-xl hidden"><i class="fa-solid fa-users-gear"></i></button>
-            <button onclick="go('p-week', this)" class="nav-btn p-4 text-xl"><i class="fa-solid fa-business-time"></i></button>
-            <button onclick="go('p-cal', this)" class="nav-btn p-4 text-xl"><i class="fa-solid fa-calendar-alt"></i></button>
+            <button onclick="go('p-week', this)" class="nav-btn p-4 text-xl"><i class="fa-solid fa-calendar-check"></i></button>
+            <button onclick="go('p-cal', this)" class="nav-btn p-4 text-xl"><i class="fa-solid fa-history"></i></button>
             <button onclick="confirmLogout()" class="p-4 text-red-500/40"><i class="fa-solid fa-power-off"></i></button>
         </nav>
     </div>
 
     <input type="file" id="file-input" class="hidden" onchange="handleFileUpload(this)">
+    
     <script src="app.js"></script>
 </body>
 </html>
