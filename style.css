@@ -47,8 +47,15 @@ body {
 }
 
 @keyframes slideUp {
-    from { opacity: 0; transform: translateY(15px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .calendar-grid {
@@ -67,9 +74,19 @@ body {
     cursor: pointer;
 }
 
-.st-normal { background: rgba(52, 199, 89, 0.1); color: #34C759; }
-.st-off { opacity: 0.3; background: rgba(255, 255, 255, 0.05); }
-.nav-btn.active { color: var(--ios-blue) !important; }
+.st-normal {
+    background: rgba(52, 199, 89, 0.1);
+    color: #34C759;
+}
+
+.st-off {
+    opacity: 0.3;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-btn.active {
+    color: var(--ios-blue) !important;
+}
 
 .time-pill {
     background: rgba(255, 255, 255, 0.05);
