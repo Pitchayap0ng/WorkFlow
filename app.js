@@ -1,4 +1,4 @@
-// 1. Firebase Config
+// 1. Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyA11zPbXEFs-sdIHKaxhkprkoGSGP1whfg",
     authDomain: "ims-fei.firebaseapp.com",
@@ -9,21 +9,26 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth(), db = firebase.database();
+const auth = firebase.auth();
+const db = firebase.database();
 emailjs.init("WSvF2N1nopC2xfuZo");
+
+// API Key สำหรับอัปโหลดรูปภาพ (ฟรี ไม่ต้องอัปเกรด Firebase)
+const IMGBB_API_KEY = "8a72c60399b9c276904659cf219a03c9"; 
 
 let currentUser = null, userData = {}, logs = [], viewDate = new Date();
 const DAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
 const MONTHS_TH = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
 
-// --- Auth Section ---
+// --- Authentication ---
 function toggleAuth(isReg) {
     document.getElementById('login-box').classList.toggle('hidden', isReg);
     document.getElementById('reg-box').classList.toggle('hidden', !isReg);
 }
 
 async function doLogin() {
-    const id = document.getElementById('l-id').value.trim(), pw = document.getElementById('l-pw').value;
+    const id = document.getElementById('l-id').value.trim();
+    const pw = document.getElementById('l-pw').value;
     if(!id || !pw) return toast("กรุณากรอกข้อมูล", "warning");
     try {
         let email = id;
@@ -42,7 +47,6 @@ async function sendOTP() {
     const pw = document.getElementById('r-pw').value;
     const name = document.getElementById('r-name').value;
     
-    // ตรวจสอบความยาวรหัสผ่านก่อนส่ง OTP
     if (pw.length < 6) return toast("รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร", "error");
     if (!user || !mail) return toast("กรุณากรอกข้อมูลให้ครบ", "error");
 
@@ -52,7 +56,6 @@ async function sendOTP() {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expireTime = new Date(Date.now() + 15 * 60000).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 
-    // ส่งค่าไปยัง EmailJS (ตามที่คุณตั้งค่าในภาพ: passcode, time, to_email)
     emailjs.send("IMS-work", "template_34sz4uc", {
         to_email: mail,   
         passcode: otp,   
@@ -65,7 +68,7 @@ async function sendOTP() {
             background: '#1c1c1e', color: '#fff',
             preConfirm: (v) => v === otp ? v : Swal.showValidationMessage('รหัสไม่ถูกต้อง')
         }).then(r => { if (r.isConfirmed) finalizeReg({user, mail, pw, name}); });
-    }).catch(e => toast("ส่งเมลไม่สำเร็จ: " + e.text, "error"));
+    }).catch(e => toast("ส่งเมลไม่สำเร็จ", "error"));
 }
 
 async function finalizeReg(info) {
@@ -73,23 +76,16 @@ async function finalizeReg(info) {
         const res = await auth.createUserWithEmailAndPassword(info.mail, info.pw);
         const uid = res.user.uid;
         await db.ref('users/' + uid).set({
-            username: info.user, displayName: info.name, email: info.mail, salary: 15000, isAdmin: false
+            username: info.user, displayName: info.name, email: info.mail, salary: 15000
         });
         await db.ref('usernames/' + info.user).set({ email: info.mail, uid: uid });
         toast("สมัครสมาชิกสำเร็จ!");
     } catch (e) {
-        // แก้ไข Error 400 โดยการแจ้งสาเหตุให้ผู้ใช้ทราบ
-        let errorMessage = "สมัครไม่สำเร็จ";
-        if (e.code === 'auth/email-already-in-use') errorMessage = "อีเมลนี้ถูกใช้งานแล้ว";
-        if (e.code === 'auth/invalid-email') errorMessage = "รูปแบบอีเมลไม่ถูกต้อง";
-        if (e.code === 'auth/weak-password') errorMessage = "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร";
-        
-        toast(errorMessage, "error");
-        console.error("Firebase Auth Error:", e.code);
+        toast("สมัครไม่สำเร็จ: " + e.message, "error");
     }
 }
 
-// --- App Logic ---
+// --- App Core ---
 auth.onAuthStateChanged(u => {
     currentUser = u;
     document.getElementById('auth-ui').classList.toggle('hidden', !!u);
@@ -101,6 +97,8 @@ function init() {
     db.ref('users/' + currentUser.uid).on('value', s => {
         userData = s.val() || {};
         document.getElementById('u-display').innerText = userData.displayName || 'User';
+        const photoEl = document.getElementById('u-photo');
+        if(photoEl) photoEl.src = userData.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
         renderWeekly();
         calculateSalary();
     });
@@ -112,6 +110,88 @@ function init() {
     });
 }
 
+// --- ฟังก์ชันอัปโหลดรูปภาพผ่าน ImgBB ---
+async function handleFileUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    Swal.fire({ title: 'กำลังอัปโหลดรูปภาพ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+            method: "POST",
+            body: formData
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            const url = result.data.url;
+            await db.ref('users/' + currentUser.uid).update({ photoURL: url });
+            Swal.close();
+            toast("เปลี่ยนรูปโปรไฟล์สำเร็จ");
+            editProfile(); // เปิดหน้าต่างแก้ไขกลับขึ้นมาเพื่อดูผลลัพธ์
+        }
+    } catch (e) {
+        Swal.fire('Error', 'อัปโหลดรูปภาพล้มเหลว', 'error');
+    }
+}
+
+async function editProfile() {
+    const { value: formValues } = await Swal.fire({
+        title: 'ตั้งค่าบัญชี',
+        background: '#1c1c1e', color: '#fff',
+        html: `
+            <div class="flex flex-col items-center mb-6">
+                <div class="relative group" onclick="document.getElementById('file-input').click()">
+                    <img src="${userData.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="w-24 h-24 rounded-full object-cover border-2 border-blue-500 shadow-lg">
+                    <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer">
+                        <i class="fa-solid fa-camera text-white"></i>
+                    </div>
+                </div>
+                <p class="text-[10px] mt-2 text-blue-500 font-bold">ถ่ายรูปหรือเลือกรูปจากคลัง</p>
+            </div>
+            <div class="text-left space-y-4">
+                <div>
+                    <label class="text-[10px] opacity-50 uppercase ml-2">ชื่อที่แสดง</label>
+                    <input id="swal-name" class="w-full bg-white/5 p-4 rounded-2xl outline-none mt-1" value="${userData.displayName || ''}">
+                </div>
+                <div>
+                    <label class="text-[10px] opacity-50 uppercase ml-2">เงินเดือนฐาน (บาท)</label>
+                    <input id="swal-salary" type="number" class="w-full bg-white/5 p-4 rounded-2xl outline-none mt-1" value="${userData.salary || 15000}">
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'บันทึกข้อมูล',
+        preConfirm: () => ({
+            displayName: document.getElementById('swal-name').value,
+            salary: parseFloat(document.getElementById('swal-salary').value)
+        })
+    });
+
+    if (formValues) {
+        await db.ref('users/' + currentUser.uid).update(formValues);
+        toast("อัปเดตข้อมูลสำเร็จ");
+    }
+}
+
+function confirmLogout() {
+    Swal.fire({
+        title: 'ออกจากระบบ?',
+        text: "คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบ?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'ใช่, ออกจากระบบ',
+        cancelButtonText: 'ยกเลิก',
+        background: '#1c1c1e', color: '#fff'
+    }).then((result) => { if (result.isConfirmed) auth.signOut(); });
+}
+
+// --- ระบบบันทึกงานและคำนวณเงิน ---
 function calculateSalary() {
     const dailyRate = (userData.salary || 15000) / 30;
     const currentMonth = new Date().getMonth();
@@ -137,8 +217,7 @@ function renderCal() {
     document.getElementById('mon-view').innerText = `${MONTHS_TH[m]} ${y + 543}`;
     const total = new Date(y, m + 1, 0).getDate(), start = new Date(y, m, 1).getDay();
     const grid = document.getElementById('cal-grid');
-    if(!grid) return;
-    grid.innerHTML = '';
+    if(!grid) return; grid.innerHTML = '';
     for (let i = 0; i < start; i++) grid.innerHTML += '<div></div>';
     for (let d = 1; d <= total; d++) {
         const date = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
@@ -161,7 +240,7 @@ function tapIn() {
 function tapOut() {
     const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
     const log = logs.find(l => l.date === d);
-    if(!log || log.checkOut) return toast("ยังไม่ได้เช็คอินหรือเช็คเอาท์ไปแล้ว", "error");
+    if(!log || log.checkOut) return toast("ไม่อยู่ในเงื่อนไขการเช็คเอาท์", "error");
     db.ref(`attendance/${currentUser.uid}/${log.id}`).update({ checkOut: t });
     toast("เช็คเอาท์สำเร็จ");
 }
