@@ -12,7 +12,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
@@ -32,12 +31,12 @@
         <div id="reg-box" class="space-y-6 hidden">
             <h1 class="text-4xl font-bold text-green-500">สมัครสมาชิก</h1>
             <div class="space-y-3">
-                <input type="text" id="r-user" placeholder="Username (ภาษาอังกฤษ)" class="input-ios">
+                <input type="text" id="r-user" placeholder="Username" class="input-ios">
                 <input type="email" id="r-mail" placeholder="อีเมล" class="input-ios">
                 <input type="password" id="r-pw" placeholder="รหัสผ่าน (6 ตัวขึ้นไป)" class="input-ios">
                 <input type="text" id="r-name" placeholder="ชื่อเล่น" class="input-ios">
             </div>
-            <button onclick="sendOTP()" class="w-full bg-green-600 py-4 rounded-2xl font-bold active:scale-95 transition-transform">รับรหัส OTP เพื่อยืนยัน</button>
+            <button onclick="sendOTP()" class="w-full bg-green-600 py-4 rounded-2xl font-bold">รับรหัส OTP</button>
             <button onclick="toggleAuth(false)" class="w-full text-zinc-500 text-sm">กลับไปหน้าล็อกอิน</button>
         </div>
     </div>
@@ -46,38 +45,32 @@
         <main class="px-5 pt-12">
             <section id="p-home" class="page active">
                 <div class="flex justify-between items-center mb-10">
-                    <div class="text-left">
-                        <p class="text-xs opacity-40 uppercase tracking-tighter">ยินดีต้อนรับ <span id="admin-tag" class="hidden text-red-500 font-bold ml-1 text-[10px] border border-red-500 px-1 rounded">ADMIN</span></p>
-                        <h2 id="u-display" class="text-xl font-bold tracking-tight">...</h2>
+                    <div>
+                        <p class="text-xs opacity-40 uppercase">ยินดีต้อนรับ <span id="admin-tag" class="hidden text-red-500 font-bold ml-1 text-[10px] border border-red-500 px-1 rounded">ADMIN</span></p>
+                        <h2 id="u-display" class="text-xl font-bold">...</h2>
                     </div>
                     <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-10 h-10 rounded-full border border-white/10">
                 </div>
-                
                 <div class="text-center">
-                    <p class="text-[10px] opacity-30 uppercase font-bold tracking-widest">ยอดเงินสะสมเดือนนี้</p>
+                    <p class="text-[10px] opacity-30 uppercase font-bold tracking-widest">ยอดรายได้ประมาณการเดือนนี้</p>
                     <h1 class="text-5xl font-bold mt-2">฿<span id="salary-view">0.00</span></h1>
                 </div>
-
                 <div class="grid grid-cols-2 gap-4 mt-12">
                     <button onclick="tapIn()" class="h-44 glass-card bg-blue-600/10 flex flex-col items-center justify-center gap-4 active:scale-95 transition-transform">
                         <i class="fa-solid fa-bolt text-3xl text-blue-500"></i>
-                        <span class="font-bold tracking-widest text-[10px]">CHECK IN</span>
+                        <span class="font-bold text-[10px]">CHECK IN</span>
                     </button>
                     <button onclick="tapOut()" class="h-44 glass-card flex flex-col items-center justify-center gap-4 active:scale-95 transition-transform">
                         <i class="fa-solid fa-moon text-3xl text-zinc-600"></i>
-                        <span class="font-bold tracking-widest text-[10px] opacity-40">CHECK OUT</span>
+                        <span class="font-bold text-[10px] opacity-40">CHECK OUT</span>
                     </button>
                 </div>
             </section>
 
-            <section id="p-week" class="page">
-                <h2 class="text-2xl font-bold mb-2">ตารางสัปดาห์</h2>
-                <p class="text-[10px] opacity-40 mb-6 uppercase">ระบุกะงานมาตรฐานของคุณ</p>
-                <div id="week-list" class="space-y-3"></div>
-            </section>
-
+            <section id="p-week" class="page"><div id="week-list" class="space-y-3 mt-10"></div></section>
+            
             <section id="p-cal" class="page">
-                <div class="flex justify-between items-center mb-6">
+                <div class="flex justify-between items-center mb-6 mt-10">
                     <h2 class="text-2xl font-bold">ปฏิทิน</h2>
                     <div class="flex items-center gap-4 bg-white/5 px-4 py-2 rounded-full">
                         <button onclick="moveMonth(-1)"><i class="fa-solid fa-chevron-left text-xs"></i></button>
@@ -85,28 +78,15 @@
                         <button onclick="moveMonth(1)"><i class="fa-solid fa-chevron-right text-xs"></i></button>
                     </div>
                 </div>
-                <div class="glass-card p-4">
-                    <div class="calendar-grid mb-4 opacity-20 text-[10px] font-bold text-center uppercase">
-                        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-                    </div>
-                    <div id="cal-grid" class="calendar-grid"></div>
-                </div>
+                <div class="glass-card p-4"><div id="cal-grid" class="calendar-grid"></div></div>
             </section>
         </main>
 
         <nav class="fixed bottom-8 left-6 right-6 glass-card p-2 flex justify-around items-center">
-            <button onclick="go('p-home', this)" class="nav-btn active p-4 text-zinc-500">
-                <i class="fa-solid fa-house"></i>
-            </button>
-            <button onclick="go('p-week', this)" class="nav-btn p-4 text-zinc-500">
-                <i class="fa-solid fa-clock"></i>
-            </button>
-            <button onclick="go('p-cal', this)" class="nav-btn p-4 text-zinc-500">
-                <i class="fa-solid fa-calendar-alt"></i>
-            </button>
-            <button onclick="auth.signOut()" class="p-4 text-red-900/50">
-                <i class="fa-solid fa-power-off"></i>
-            </button>
+            <button onclick="go('p-home', this)" class="nav-btn active p-4 text-zinc-500"><i class="fa-solid fa-house"></i></button>
+            <button onclick="go('p-week', this)" class="nav-btn p-4 text-zinc-500"><i class="fa-solid fa-clock"></i></button>
+            <button onclick="go('p-cal', this)" class="nav-btn p-4 text-zinc-500"><i class="fa-solid fa-calendar-alt"></i></button>
+            <button onclick="auth.signOut()" class="p-4 text-red-900/50"><i class="fa-solid fa-power-off"></i></button>
         </nav>
     </div>
 
