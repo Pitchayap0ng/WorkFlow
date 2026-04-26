@@ -1,4 +1,4 @@
-// --- CONFIGURATION ---
+// --- CONFIG (ใช้ตามรูปที่คุณส่งมา) ---
 const firebaseConfig = {
     apiKey: "AIzaSyA11zPbXEFs-sdIHKaxhkprkoGSGP1whfg",
     authDomain: "ims-fei.firebaseapp.com",
@@ -16,15 +16,15 @@ let currentUser = null, userData = {}, logs = [], viewDate = new Date();
 const DAYS = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
 const MONTHS = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
 
-// --- NOTIFICATION ---
+// --- 1. NOTIFICATION ---
 function alertCenter(msg, icon = "success") {
     Swal.fire({
-        icon: icon, title: msg, position: 'center', showConfirmButton: false, timer: 1800,
-        background: '#1c1c1e', color: '#fff', backdrop: `rgba(0,0,0,0.8)`
+        icon: icon, title: msg, position: 'center', showConfirmButton: false, timer: 1500,
+        background: '#1c1c1e', color: '#fff'
     });
 }
 
-// --- AUTH ---
+// --- 2. AUTH ---
 async function doLogin() {
     const id = document.getElementById('l-id').value.trim(), pw = document.getElementById('l-pw').value;
     if(!id || !pw) return alertCenter("กรุณากรอกข้อมูล", "warning");
@@ -32,18 +32,16 @@ async function doLogin() {
         let email = id;
         if (!id.includes('@')) {
             const snap = await db.ref('usernames/' + id.toLowerCase()).once('value');
-            if (!snap.exists()) return alertCenter("ไม่พบชื่อผู้ใช้งาน", "error");
+            if (!snap.exists()) return alertCenter("ไม่พบ User นี้", "error");
             email = snap.val().email;
         }
         await auth.signInWithEmailAndPassword(email, pw);
-        alertCenter("เข้าสู่ระบบสำเร็จ");
-    } catch (e) { alertCenter("Login Failed", "error"); }
+    } catch (e) { alertCenter("รหัสผ่านไม่ถูกต้อง", "error"); }
 }
 
 async function confirmLogout() {
     const res = await Swal.fire({
-        title: 'ออกจากระบบ?',
-        icon: 'warning', background: '#1c1c1e', color: '#fff',
+        title: 'ออกจากระบบ?', icon: 'warning', background: '#1c1c1e', color: '#fff',
         showCancelButton: true, confirmButtonText: 'ตกลง', cancelButtonText: 'ยกเลิก'
     });
     if (res.isConfirmed) auth.signOut();
@@ -54,14 +52,16 @@ auth.onAuthStateChanged(u => {
     document.getElementById('auth-ui').classList.toggle('hidden', !!u);
     document.getElementById('app-ui').classList.toggle('hidden', !u);
     if (u) {
+        // ฟังข้อมูลพนักงานคนนี้
         db.ref('users/' + u.uid).on('value', s => {
             userData = s.val() || {};
             updateUI();
             if (userData.role === 'admin') {
                 document.getElementById('nav-admin').classList.remove('hidden');
-                loadAdmin();
+                loadAdmin(); // เรียกโหลดรายชื่อพนักงาน
             }
         });
+        // ฟังประวัติการเข้างาน
         db.ref('attendance/' + u.uid).on('value', s => {
             const d = s.val();
             logs = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
@@ -71,19 +71,21 @@ auth.onAuthStateChanged(u => {
     }
 });
 
+// --- 3. UI ---
 function updateUI() {
-    document.getElementById('u-display').innerText = userData.displayName || 'User';
+    document.getElementById('u-display').innerText = userData.displayName || userData.username || 'User';
     document.getElementById('u-photo').src = userData.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+    document.getElementById('rider-card').classList.toggle('hidden', userData.jobType !== 'rider');
     renderSchedule();
 }
 
-// --- ADMIN MANAGE (แก้ไขให้ดึงข้อมูลได้ชัวร์) ---
+// --- 4. ADMIN & LOADING FIX ---
 function loadAdmin() {
     const list = document.getElementById('user-list');
     db.ref('users').on('value', s => {
         const users = s.val();
         if(!users) {
-            list.innerHTML = '<p class="text-center opacity-20 py-10">No users found</p>';
+            list.innerHTML = '<p class="text-center opacity-20 py-10">No users found.</p>';
             return;
         }
         list.innerHTML = Object.keys(users).map(uid => `
@@ -91,11 +93,11 @@ function loadAdmin() {
                 <div class="flex items-center gap-4">
                     <img src="${users[uid].photoURL || ''}" class="w-10 h-10 rounded-full object-cover bg-zinc-800">
                     <div>
-                        <p class="font-bold text-sm">${users[uid].displayName || users[uid].username || 'No Name'}</p>
-                        <p class="text-[9px] opacity-40 uppercase tracking-widest">${users[uid].role || 'staff'}</p>
+                        <p class="font-bold text-sm text-white">${users[uid].displayName || users[uid].username}</p>
+                        <p class="text-[9px] opacity-40 uppercase tracking-widest">${users[uid].role || 'staff'} • ${users[uid].jobType || 'staff'}</p>
                     </div>
                 </div>
-                <i class="fa-solid fa-chevron-right opacity-20"></i>
+                <i class="fa-solid fa-chevron-right opacity-20 text-[10px]"></i>
             </div>`).join('');
     });
 }
@@ -104,57 +106,61 @@ async function adminEdit(uid) {
     const snap = await db.ref('users/' + uid).once('value');
     const u = snap.val();
     const { value: res } = await Swal.fire({
-        title: 'จัดการพนักงาน',
+        title: 'Manage Employee',
         background: '#1c1c1e', color: '#fff',
         html: `
             <div class="space-y-3 text-left">
-                <label class="text-[10px] ml-1 opacity-40 uppercase">Salary & OT</label>
                 <div class="grid grid-cols-2 gap-2">
-                    <input id="ad-sal" type="number" class="bg-white/5 p-4 rounded-xl text-white border border-white/5 outline-none" value="${u.salary || 0}" placeholder="Salary">
-                    <input id="ad-ot" type="number" class="bg-white/5 p-4 rounded-xl text-white border border-white/5 outline-none" value="${u.otRate || 0}" placeholder="OT Rate">
+                    <input id="ad-sal" type="number" class="time-pill w-full" value="${u.salary || 0}" placeholder="Salary">
+                    <input id="ad-ot" type="number" class="time-pill w-full" value="${u.otRate || 0}" placeholder="OT Rate">
                 </div>
-                <label class="text-[10px] ml-1 opacity-40 uppercase mt-4 block">Permission</label>
-                <select id="ad-role" class="w-full bg-[#2c2c2e] p-4 rounded-xl text-white outline-none border border-white/5">
-                    <option value="staff" ${u.role === 'staff' ? 'selected' : ''}>Staff (User)</option>
-                    <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+                <select id="ad-job" class="time-pill w-full bg-[#2c2c2e]">
+                    <option value="staff" ${u.jobType === 'staff'?'selected':''}>Staff (ทั่วไป)</option>
+                    <option value="rider" ${u.jobType === 'rider'?'selected':''}>Rider (มีระบบบิล)</option>
+                </select>
+                <select id="ad-role" class="time-pill w-full bg-[#2c2c2e]">
+                    <option value="staff" ${u.role === 'staff'?'selected':''}>User</option>
+                    <option value="admin" ${u.role === 'admin'?'selected':''}>Admin</option>
                 </select>
             </div>`,
         showCancelButton: true,
-        confirmButtonText: 'บันทึก',
-        preConfirm: () => ({ 
-            salary: parseFloat(document.getElementById('ad-sal').value) || 0, 
-            otRate: parseFloat(document.getElementById('ad-ot').value) || 0, 
-            role: document.getElementById('ad-role').value 
+        preConfirm: () => ({
+            salary: parseFloat(document.getElementById('ad-sal').value) || 0,
+            otRate: parseFloat(document.getElementById('ad-ot').value) || 0,
+            jobType: document.getElementById('ad-job').value,
+            role: document.getElementById('ad-role').value
         })
     });
     if (res) {
         await db.ref('users/' + uid).update(res);
-        alertCenter("อัปเดตข้อมูลพนักงานสำเร็จ");
+        alertCenter("บันทึกสำเร็จ");
     }
 }
 
-// --- WEEKLY SCHEDULE (แก้ Error Undefined) ---
+// --- 5. RIDER LOGIC ---
+async function addDelivery(val) {
+    const d = new Date().toISOString().split('T')[0];
+    const log = logs.find(l => l.date === d);
+    if(!log) return alertCenter("ต้อง Check-In ก่อน", "warning");
+    let current = log.delivery || 0;
+    let newVal = Math.max(0, current + val);
+    await db.ref(`attendance/${currentUser.uid}/${log.id}`).update({ delivery: newVal });
+}
+
+// --- 6. SCHEDULE & ATTENDANCE ---
 function renderSchedule() {
-    const list = document.getElementById('week-list');
-    if(!list) return;
+    const list = document.getElementById('week-list'); if(!list) return;
     list.innerHTML = DAYS.map(d => {
-        const shiftData = (userData.shifts && userData.shifts[d]) ? userData.shifts[d] : {};
-        const s = {
-            in: shiftData.in || '08:30',
-            out: shiftData.out || '17:30',
-            isOff: shiftData.isOff || false
-        };
+        const s = (userData.shifts && userData.shifts[d]) ? userData.shifts[d] : { in: '08:30', out: '17:30', isOff: false };
         return `
-        <div class="glass-card p-5 ${s.isOff ? 'opacity-30' : ''}">
-            <div class="flex justify-between items-center mb-4 text-sm font-bold">
+        <div class="glass-card p-4 ${s.isOff ? 'opacity-30' : ''}">
+            <div class="flex justify-between items-center mb-3 text-[11px] font-bold">
                 <span class="text-blue-400 uppercase">${d}</span>
-                <button onclick="toggleDayOff('${d}', ${!s.isOff})" class="text-[10px] px-3 py-1 rounded-full border ${s.isOff ? 'border-red-500 text-red-500' : 'border-zinc-700 text-zinc-400'}">
-                    ${s.isOff ? 'STOP' : 'WORK'}
-                </button>
+                <button onclick="toggleDayOff('${d}', ${!s.isOff})" class="${s.isOff?'text-red-500':'text-zinc-500'}">${s.isOff?'OFF':'ON'}</button>
             </div>
-            <div class="grid grid-cols-2 gap-4">
-                <input type="time" id="in-${d}" class="time-pill w-full text-center text-lg" value="${s.in}">
-                <input type="time" id="out-${d}" class="time-pill w-full text-center text-lg" value="${s.out}">
+            <div class="grid grid-cols-2 gap-3">
+                <input type="time" id="in-${d}" class="time-pill" value="${s.in || '08:30'}">
+                <input type="time" id="out-${d}" class="time-pill" value="${s.out || '17:30'}">
             </div>
         </div>`;
     }).join('');
@@ -163,18 +169,18 @@ function renderSchedule() {
 async function saveWeekly() {
     const updates = {};
     DAYS.forEach(d => {
-        updates[`${d}/in`] = document.getElementById(`in-${d}`).value || '08:30';
-        updates[`${d}/out`] = document.getElementById(`out-${d}`).value || '17:30';
+        updates[`${d}/in`] = document.getElementById(`in-${d}`).value;
+        updates[`${d}/out`] = document.getElementById(`out-${d}`).value;
     });
     await db.ref(`users/${currentUser.uid}/shifts`).update(updates);
-    alertCenter("บันทึกตารางงานแล้ว");
+    alertCenter("บันทึกตารางแล้ว");
 }
 
 async function toggleDayOff(d, s) {
     await db.ref(`users/${currentUser.uid}/shifts/${d}/isOff`).set(s);
 }
 
-// --- ATTENDANCE & CALENDAR ---
+// --- 7. CALENDAR & SALARY ---
 function renderCal() {
     const y = viewDate.getFullYear(), m = viewDate.getMonth();
     document.getElementById('mon-view').innerText = `${MONTHS[m]} ${y + 543}`;
@@ -198,39 +204,46 @@ async function manageLog(ds) {
         const { value: res } = await Swal.fire({
             background: '#1c1c1e', color: '#fff',
             html: `
-                <div class="grid grid-cols-2 gap-2 mb-2"><input id="sw-in" type="time" class="time-pill w-full" value="${log?log.checkIn:'08:30'}"><input id="sw-out" type="time" class="time-pill w-full" value="${log?log.checkOut:'17:30'}"></div>
-                <div class="grid grid-cols-1"><input id="sw-oth" type="number" step="0.5" class="time-pill w-full mt-2" placeholder="OT (Hours)" value="${log?log.otHours:0}"></div>`,
-            preConfirm: () => ({ checkIn: document.getElementById('sw-in').value, checkOut: document.getElementById('sw-out').value, otHours: parseFloat(document.getElementById('sw-oth').value)||0 })
+                <div class="grid grid-cols-2 gap-2"><input id="sw-in" type="time" class="time-pill w-full" value="${log?log.checkIn:'08:30'}"><input id="sw-out" type="time" class="time-pill w-full" value="${log?log.checkOut:'17:30'}"></div>
+                <input id="sw-oth" type="number" step="0.5" class="time-pill w-full mt-2" placeholder="OT (ชั่วโมง)" value="${log?log.otHours:0}">
+                <input id="sw-bill" type="number" class="time-pill w-full mt-2" placeholder="จำนวนบิล" value="${log?log.delivery:0}">`,
+            preConfirm: () => ({ 
+                checkIn: document.getElementById('sw-in').value, 
+                checkOut: document.getElementById('sw-out').value, 
+                otHours: parseFloat(document.getElementById('sw-oth').value)||0,
+                delivery: parseInt(document.getElementById('sw-bill').value)||0
+            })
         });
         if (res) {
             if (log) await db.ref(`attendance/${currentUser.uid}/${log.id}`).update(res);
             else await db.ref(`attendance/${currentUser.uid}`).push({ ...res, date: ds, isOff: false });
-            alertCenter("บันทึกแล้ว");
         }
     } else if (action === false) {
         await db.ref(`attendance/${currentUser.uid}/${log.id}`).remove();
-        alertCenter("ลบแล้ว");
     }
 }
 
 function calculate() {
-    const daily = (userData.salary || 0) / 30, otRate = userData.otRate || 0;
-    let total = 0;
+    const daily = (userData.salary || 0) / 30, otRate = userData.otRate || 0, billRate = 15;
+    let total = 0, todayB = 0;
     logs.forEach(l => {
         if (new Date(l.date).getMonth() === new Date().getMonth()) {
             if (l.checkIn && !l.isOff) total += daily;
             total += (l.otHours || 0) * otRate;
+            total += (l.delivery || 0) * billRate;
+            if (l.date === new Date().toISOString().split('T')[0]) todayB = l.delivery || 0;
         }
     });
     document.getElementById('salary-view').innerText = total.toLocaleString(undefined, {minimumFractionDigits: 2});
+    if(document.getElementById('today-bills')) document.getElementById('today-bills').innerText = todayB;
 }
 
-// --- UTILS ---
+// --- 8. UTILS ---
 function tapIn() {
     const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
-    if(logs.find(l => l.date === d)) return alertCenter("บันทึกวันนี้ไปแล้ว", "warning");
-    db.ref(`attendance/${currentUser.uid}`).push({ date: d, checkIn: t, checkOut: '', isOff: false, otHours: 0 });
-    alertCenter("Check In: " + t);
+    if(logs.find(l => l.date === d)) return alertCenter("บันทึกไปแล้ว", "warning");
+    db.ref(`attendance/${currentUser.uid}`).push({ date: d, checkIn: t, checkOut: '', isOff: false, delivery: 0, otHours: 0 });
+    alertCenter("Check In สำเร็จ");
 }
 
 function tapOut() {
@@ -238,8 +251,8 @@ function tapOut() {
     const log = logs.find(l => l.date === d);
     if(log && !log.checkOut) {
         db.ref(`attendance/${currentUser.uid}/${log.id}`).update({ checkOut: t });
-        alertCenter("Check Out: " + t);
-    } else alertCenter("ไม่พบข้อมูลเช็คอิน", "error");
+        alertCenter("Check Out สำเร็จ");
+    } else alertCenter("ไม่พบข้อมูล", "error");
 }
 
 function go(id, btn) {
@@ -251,16 +264,12 @@ function go(id, btn) {
 function moveMonth(v) { viewDate.setMonth(viewDate.getMonth() + v); renderCal(); }
 
 async function editProfile() {
-    const { value: res } = await Swal.fire({
-        title: 'Profile Settings',
-        background: '#1c1c1e', color: '#fff',
-        html: `<div class="mb-4" onclick="document.getElementById('file-input').click()"><img src="${userData.photoURL || ''}" class="w-20 h-20 rounded-full mx-auto border-2 border-blue-500 object-cover"><p class="text-[10px] mt-2 opacity-40">Tap to Change</p></div><input id="sw-name" class="w-full bg-white/5 p-4 rounded-xl border border-white/5 text-white" value="${userData.displayName || ''}" placeholder="Name">`,
-        showCancelButton: true, preConfirm: () => document.getElementById('sw-name').value
+    const { value: name } = await Swal.fire({
+        title: 'Edit Name', background: '#1c1c1e', color: '#fff',
+        input: 'text', inputValue: userData.displayName || '',
+        showCancelButton: true
     });
-    if (res) {
-        await db.ref('users/' + currentUser.uid).update({ displayName: res });
-        alertCenter("อัปเดตชื่อสำเร็จ");
-    }
+    if (name) await db.ref('users/' + currentUser.uid).update({ displayName: name });
 }
 
 async function handleFileUpload(input) {
@@ -269,9 +278,6 @@ async function handleFileUpload(input) {
     try {
         const r = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd });
         const res = await r.json();
-        if (res.success) {
-            await db.ref('users/' + currentUser.uid).update({ photoURL: res.data.url });
-            alertCenter("เปลี่ยนรูปโปรไฟล์สำเร็จ");
-        }
+        if (res.success) await db.ref('users/' + currentUser.uid).update({ photoURL: res.data.url });
     } catch (e) { alertCenter("Upload Failed", "error"); }
 }
