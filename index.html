@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CleanFlow - Flexible Shift</title>
+    <title>CleanFlow - Sync Fix</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -18,56 +18,49 @@
         .page.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         .ios-card { background: rgba(28, 28, 30, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 2rem; }
-        input[type="time"] { background: transparent; border: none; color: #6366f1; font-weight: bold; outline: none; }
     </style>
 </head>
 <body>
 
     <main class="pt-[env(safe-area-inset-top)] px-6">
         
-        <section id="page-home" class="page active pt-10 text-center">
-            <header class="mb-8 text-left">
+        <section id="page-home" class="page active pt-10">
+            <header class="mb-8">
                 <p class="text-[10px] font-bold opacity-40 uppercase tracking-widest">เงินเดือนสุทธิ (รวม OT)</p>
                 <h1 class="text-4xl font-bold">฿<span id="salaryDisplay">0.00</span></h1>
-                <p id="todayPlan" class="text-[10px] text-indigo-400 mt-2 font-bold"></p>
             </header>
-
             <div class="grid grid-cols-1 gap-6">
-                <button onclick="checkIn()" class="h-56 ios-card bg-indigo-600 border-none flex flex-col items-center justify-center gap-4 active:scale-95 transition-all shadow-2xl shadow-indigo-500/20">
-                    <div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
-                        <i class="fa-solid fa- fingerprint text-3xl"></i>
-                    </div>
-                    <span class="text-xs font-black uppercase tracking-[0.2em]">Check In</span>
+                <button onclick="checkIn()" class="h-44 ios-card bg-indigo-600 border-none flex flex-col items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-indigo-500/20">
+                    <i class="fa-solid fa-play text-2xl text-white"></i>
+                    <span class="text-xs font-black uppercase tracking-widest">Check In</span>
                 </button>
                 <button onclick="checkOut()" class="h-32 ios-card flex flex-col items-center justify-center gap-2 active:scale-95 transition-all">
-                    <i class="fa-solid fa-power-off text-xl opacity-30"></i>
-                    <span class="text-[10px] font-black uppercase tracking-widest opacity-30">Check Out</span>
+                    <i class="fa-solid fa-stop text-xl opacity-40"></i>
+                    <span class="text-[10px] font-black uppercase tracking-widest opacity-40">Check Out</span>
                 </button>
             </div>
-        </section>
-
-        <section id="page-schedule" class="page pt-10">
-            <h2 class="text-2xl font-bold mb-2">ตารางงานสัปดาห์นี้</h2>
-            <p class="text-[10px] opacity-40 mb-6 uppercase">กำหนดเวลาเข้า-ออกของแต่ละวัน</p>
-            <div id="weeklyInputs" class="space-y-3">
-                </div>
         </section>
 
         <section id="page-history" class="page pt-10">
-            <h2 class="text-2xl font-bold mb-6">ประวัติ & ตั้งค่าเงินเดือน</h2>
+            <h2 class="text-2xl font-bold mb-6">ประวัติการทำงาน</h2>
+            <div id="fullHistoryList" class="space-y-4">
+                </div>
+        </section>
+
+        <section id="page-settings" class="page pt-10">
             <div class="ios-card p-6 mb-6">
                 <label class="text-[10px] font-bold opacity-30 uppercase">เงินเดือนพื้นฐาน</label>
-                <input type="number" id="baseSalary" onchange="saveBaseSalary()" class="w-full bg-transparent text-2xl font-bold border-b border-white/10 py-3 outline-none">
+                <input type="number" id="baseSalary" onchange="saveConfig()" class="w-full bg-transparent text-2xl font-bold border-b border-white/10 py-3 outline-none">
             </div>
-            <div id="fullHistoryList" class="space-y-3"></div>
+            <div id="weeklySched" class="space-y-3"></div>
         </section>
 
     </main>
 
     <nav class="fixed bottom-10 left-6 right-6 ios-card p-2 flex justify-around items-center shadow-2xl z-50">
-        <button onclick="switchPage('page-home', this)" class="p-4 text-indigo-500"><i class="fa-solid fa-house-user"></i></button>
-        <button onclick="switchPage('page-schedule', this)" class="p-4 text-zinc-500"><i class="fa-solid fa-calendar-week"></i></button>
-        <button onclick="switchPage('page-history', this)" class="p-4 text-zinc-500"><i class="fa-solid fa-clock-rotate-left"></i></button>
+        <button onclick="switchPage('page-home', this)" class="p-4 text-indigo-500"><i class="fa-solid fa-house"></i></button>
+        <button onclick="switchPage('page-history', this)" class="p-4 text-zinc-500"><i class="fa-solid fa-list-check"></i></button>
+        <button onclick="switchPage('page-settings', this)" class="p-4 text-zinc-500"><i class="fa-solid fa-sliders"></i></button>
     </nav>
 
     <script>
@@ -80,15 +73,14 @@
             messagingSenderId: "791711191329",
             appId: "1:791711191329:web:0a4ba03cd5f11eb71bae60"
         };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
         const days = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
         let logs = [];
-        let baseSalary = localStorage.getItem('cf_base_salary') || 15000;
-        let weeklySched = JSON.parse(localStorage.getItem('cf_weekly')) || {};
+        let config = JSON.parse(localStorage.getItem('cf_config')) || { salary: 15000, schedule: {} };
 
-        // --- Sync Data ---
+        // 1. ดึงข้อมูลจาก Firebase (Real-time)
         db.ref('attendance').on('value', snap => {
             const data = snap.val();
             logs = data ? Object.keys(data).map(id => ({ id, ...data[id] })) : [];
@@ -96,87 +88,104 @@
             render();
         });
 
-        // --- Core Actions ---
+        // 2. ฟังก์ชันหลัก (Check In / Out)
         function checkIn() {
             const now = new Date(), date = now.toISOString().split('T')[0], time = now.toTimeString().slice(0, 5);
-            const dayName = days[now.getDay()];
-            const plan = weeklySched[dayName] || { in: "08:30" };
-            
             if (logs.find(l => l.date === date)) return toast("วันนี้ลงเวลาไปแล้ว", "info");
-
-            const late = diff(plan.in, time);
-            db.ref('attendance').push({ date, checkIn: time, checkOut: "", late: late > 0 ? late : 0, ot: 0, planIn: plan.in, planOut: plan.out });
             
-            Swal.fire({ title: "ลงเวลาเข้างานเรียบร้อยแล้ว", icon: "success", timer: 2000, showConfirmButton: false, background: '#1c1c1e', color: '#fff' });
+            const dayName = days[now.getDay()];
+            const planIn = config.schedule[dayName]?.in || "08:30";
+            const late = diff(planIn, time);
+
+            db.ref('attendance').push({
+                date, checkIn: time, checkOut: "", 
+                late: late > 0 ? late : 0, ot: 0,
+                planIn: planIn, planOut: config.schedule[dayName]?.out || "17:30"
+            });
+            toast("ลงเวลาเข้างานเรียบร้อยแล้ว");
         }
 
         function checkOut() {
             const now = new Date(), date = now.toISOString().split('T')[0], time = now.toTimeString().slice(0, 5);
             const today = logs.find(l => l.date === date);
-            if (!today) return toast("ยังไม่ได้ Check In!", "error");
-            if (today.checkOut) return toast("ออกงานไปแล้ว");
-
-            const planOut = today.planOut || "17:30";
-            const otMin = diff(planOut, time);
-            const otHour = otMin > 60 ? Math.floor(otMin / 60) : 0;
-
-            db.ref('attendance/' + today.id).update({ checkOut: time, ot: otHour });
+            if (!today) return toast("ยังไม่ได้เข้างาน!", "error");
             
-            Swal.fire({ title: "ลงเวลาเลิกงานเรียบร้อยแล้ว", icon: "success", timer: 2000, showConfirmButton: false, background: '#1c1c1e', color: '#fff' });
+            const otMin = diff(today.planOut || "17:30", time);
+            db.ref('attendance/' + today.id).update({
+                checkOut: time,
+                ot: otMin > 60 ? Math.floor(otMin / 60) : 0
+            });
+            toast("ลงเวลาเลิกงานเรียบร้อยแล้ว");
         }
 
-        // --- UI Render ---
+        // 3. ฟังก์ชันแก้ไขและลบ (ส่งค่าไป Firebase)
+        async function editLog(id) {
+            const item = logs.find(l => l.id === id);
+            const { value: form } = await Swal.fire({
+                title: 'แก้ไขเวลา',
+                html: `<input id="in" type="time" class="swal2-input" value="${item.checkIn}">
+                       <input id="out" type="time" class="swal2-input" value="${item.checkOut || ''}">`,
+                preConfirm: () => [document.getElementById('in').value, document.getElementById('out').value],
+                background: '#1c1c1e', color: '#fff', confirmButtonColor: '#6366f1'
+            });
+
+            if (form) {
+                const [nIn, nOut] = form;
+                const late = diff(item.planIn || "08:30", nIn);
+                const ot = nOut ? Math.floor(diff(item.planOut || "17:30", nOut) / 60) : 0;
+                
+                // อัปเดตไปที่ Firebase
+                db.ref('attendance/' + id).update({
+                    checkIn: nIn, checkOut: nOut,
+                    late: late > 0 ? late : 0,
+                    ot: ot > 0 ? ot : 0
+                });
+                toast("แก้ไขข้อมูลในระบบแล้ว");
+            }
+        }
+
+        function deleteLog(id) {
+            Swal.fire({
+                title: 'ลบรายการนี้?',
+                text: "ข้อมูลใน Firebase จะหายไปถาวร",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                background: '#1c1c1e', color: '#fff'
+            }).then(res => {
+                if (res.isConfirmed) {
+                    db.ref('attendance/' + id).remove(); // ลบจาก Firebase
+                    toast("ลบข้อมูลเรียบร้อย");
+                }
+            });
+        }
+
+        // 4. แสดงผล UI
         function render() {
             const currentMonth = new Date().toISOString().slice(0, 7);
             const mData = logs.filter(l => l.date.startsWith(currentMonth));
             
             const totalOT = mData.reduce((s, l) => s + (l.ot || 0), 0);
-            const otPay = totalOT * ((baseSalary / 30 / 8) * 1.5);
-            const sso = Math.min(baseSalary * 0.05, 750);
-            const net = (parseFloat(baseSalary) + otPay) - sso;
+            const otPay = totalOT * ((config.salary / 30 / 8) * 1.5);
+            const net = (parseFloat(config.salary) + otPay) - Math.min(config.salary * 0.05, 750);
 
             document.getElementById('salaryDisplay').innerText = net.toLocaleString(undefined, { minimumFractionDigits: 2 });
             
-            const todayName = days[new Date().getDay()];
-            const tPlan = weeklySched[todayName] || {in:'-', out:'-'};
-            document.getElementById('todayPlan').innerText = `แผนงานวันนี้ (${todayName}): เข้า ${tPlan.in} - ออก ${tPlan.out}`;
-
-            document.getElementById('fullHistoryList').innerHTML = mData.slice(0, 10).map(l => `
-                <div class="ios-card p-4 flex justify-between items-center text-xs">
-                    <div><b>${l.date}</b><br><span class="opacity-40">${l.checkIn} - ${l.checkOut || '...'}</span></div>
-                    <div class="text-right">${l.ot > 0 ? `<span class="text-indigo-400">+${l.ot}h</span>` : ''}</div>
-                </div>
-            `).join('');
-        }
-
-        // --- Weekly Logic ---
-        function initWeekly() {
-            const container = document.getElementById('weeklyInputs');
-            container.innerHTML = days.map(d => `
-                <div class="ios-card p-4 flex justify-between items-center">
-                    <span class="text-sm font-bold">${d}</span>
-                    <div class="flex gap-2 items-center">
-                        <input type="time" value="${weeklySched[d]?.in || '08:30'}" onchange="saveWeekly('${d}', 'in', this.value)">
-                        <span class="opacity-20">|</span>
-                        <input type="time" value="${weeklySched[d]?.out || '17:30'}" onchange="saveWeekly('${d}', 'out', this.value)">
+            document.getElementById('fullHistoryList').innerHTML = mData.map(l => `
+                <div class="ios-card p-5 flex justify-between items-center">
+                    <div>
+                        <p class="text-xs font-bold text-indigo-400">${l.date}</p>
+                        <p class="text-sm font-bold">${l.checkIn} - ${l.checkOut || '...'}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="editLog('${l.id}')" class="w-8 h-8 rounded-full bg-white/5 text-[10px]"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteLog('${l.id}')" class="w-8 h-8 rounded-full bg-rose-500/10 text-rose-500 text-[10px]"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </div>
             `).join('');
         }
 
-        function saveWeekly(day, type, val) {
-            if(!weeklySched[day]) weeklySched[day] = {};
-            weeklySched[day][type] = val;
-            localStorage.setItem('cf_weekly', JSON.stringify(weeklySched));
-            render();
-        }
-
-        function saveBaseSalary() {
-            baseSalary = document.getElementById('baseSalary').value;
-            localStorage.setItem('cf_base_salary', baseSalary);
-            render();
-        }
-
+        // 5. Utilities
         function diff(t1, t2) {
             const [h1, m1] = t1.split(':').map(Number), [h2, m2] = t2.split(':').map(Number);
             return (h2 * 60 + m2) - (h1 * 60 + m1);
@@ -189,11 +198,32 @@
             btn.classList.replace('text-zinc-500', 'text-indigo-500');
         }
 
-        function toast(m, i="success") { Swal.fire({title: m, icon: i, timer: 1500, showConfirmButton: false, background: '#1c1c1e', color: '#fff'}); }
+        function saveConfig() {
+            config.salary = document.getElementById('baseSalary').value;
+            localStorage.setItem('cf_config', JSON.stringify(config));
+            render();
+        }
+
+        function saveWeekly(day, type, val) {
+            if (!config.schedule[day]) config.schedule[day] = {};
+            config.schedule[day][type] = val;
+            localStorage.setItem('cf_config', JSON.stringify(config));
+        }
+
+        function toast(m, i = "success") { Swal.fire({ title: m, icon: i, timer: 1500, showConfirmButton: false, background: '#1c1c1e', color: '#fff' }); }
 
         window.onload = () => {
-            document.getElementById('baseSalary').value = baseSalary;
-            initWeekly();
+            document.getElementById('baseSalary').value = config.salary;
+            const container = document.getElementById('weeklySched');
+            container.innerHTML = days.map(d => `
+                <div class="ios-card p-4 flex justify-between items-center text-xs">
+                    <span class="font-bold">${d}</span>
+                    <div class="flex gap-2">
+                        <input type="time" value="${config.schedule[d]?.in || '08:30'}" onchange="saveWeekly('${d}', 'in', this.value)">
+                        <input type="time" value="${config.schedule[d]?.out || '17:30'}" onchange="saveWeekly('${d}', 'out', this.value)">
+                    </div>
+                </div>
+            `).join('');
             render();
         };
     </script>
