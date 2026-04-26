@@ -1,4 +1,4 @@
-// 1. Firebase Configuration
+// 1. Firebase Config
 const firebaseConfig = {
     apiKey: "AIzaSyA11zPbXEFs-sdIHKaxhkprkoGSGP1whfg",
     authDomain: "ims-fei.firebaseapp.com",
@@ -9,23 +9,21 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.database();
+const auth = firebase.auth(), db = firebase.database();
 emailjs.init("WSvF2N1nopC2xfuZo");
 
 let currentUser = null, userData = {}, logs = [], viewDate = new Date();
 const DAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
 const MONTHS_TH = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
 
-// --- Authentication ---
+// --- Auth Section ---
 function toggleAuth(isReg) {
     document.getElementById('login-box').classList.toggle('hidden', isReg);
     document.getElementById('reg-box').classList.toggle('hidden', !isReg);
 }
 
 async function doLogin() {
-    const id = document.getElementById('l-id').value.trim();
-    const pw = document.getElementById('l-pw').value;
+    const id = document.getElementById('l-id').value.trim(), pw = document.getElementById('l-pw').value;
     if(!id || !pw) return toast("กรุณากรอกข้อมูล", "warning");
     try {
         let email = id;
@@ -44,7 +42,9 @@ async function sendOTP() {
     const pw = document.getElementById('r-pw').value;
     const name = document.getElementById('r-name').value;
     
-    if (!user || !mail || pw.length < 6) return toast("ข้อมูลไม่ครบ (รหัสต้อง 6 ตัวขึ้นไป)", "error");
+    // ตรวจสอบความยาวรหัสผ่านก่อนส่ง OTP
+    if (pw.length < 6) return toast("รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร", "error");
+    if (!user || !mail) return toast("กรุณากรอกข้อมูลให้ครบ", "error");
 
     const snap = await db.ref('usernames/' + user).once('value');
     if (snap.exists()) return toast("Username นี้มีคนใช้แล้ว", "error");
@@ -52,7 +52,7 @@ async function sendOTP() {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expireTime = new Date(Date.now() + 15 * 60000).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 
-    // ส่งค่าให้ตรงกับ {{to_email}}, {{passcode}}, {{time}} ใน EmailJS Dashboard
+    // ส่งค่าไปยัง EmailJS (ตามที่คุณตั้งค่าในภาพ: passcode, time, to_email)
     emailjs.send("IMS-work", "template_34sz4uc", {
         to_email: mail,   
         passcode: otp,   
@@ -78,14 +78,18 @@ async function finalizeReg(info) {
         await db.ref('usernames/' + info.user).set({ email: info.mail, uid: uid });
         toast("สมัครสมาชิกสำเร็จ!");
     } catch (e) {
-        let msg = "สมัครไม่สำเร็จ";
-        if (e.code === 'auth/email-already-in-use') msg = "อีเมลนี้ถูกใช้งานแล้ว";
-        if (e.code === 'auth/weak-password') msg = "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร";
-        toast(msg, "error");
+        // แก้ไข Error 400 โดยการแจ้งสาเหตุให้ผู้ใช้ทราบ
+        let errorMessage = "สมัครไม่สำเร็จ";
+        if (e.code === 'auth/email-already-in-use') errorMessage = "อีเมลนี้ถูกใช้งานแล้ว";
+        if (e.code === 'auth/invalid-email') errorMessage = "รูปแบบอีเมลไม่ถูกต้อง";
+        if (e.code === 'auth/weak-password') errorMessage = "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร";
+        
+        toast(errorMessage, "error");
+        console.error("Firebase Auth Error:", e.code);
     }
 }
 
-// --- App Core ---
+// --- App Logic ---
 auth.onAuthStateChanged(u => {
     currentUser = u;
     document.getElementById('auth-ui').classList.toggle('hidden', !!u);
@@ -157,7 +161,7 @@ function tapIn() {
 function tapOut() {
     const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
     const log = logs.find(l => l.date === d);
-    if(!log || log.checkOut) return toast("เช็คอินก่อนหรือเช็คเอาท์ไปแล้ว", "error");
+    if(!log || log.checkOut) return toast("ยังไม่ได้เช็คอินหรือเช็คเอาท์ไปแล้ว", "error");
     db.ref(`attendance/${currentUser.uid}/${log.id}`).update({ checkOut: t });
     toast("เช็คเอาท์สำเร็จ");
 }
