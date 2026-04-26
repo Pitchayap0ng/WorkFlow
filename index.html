@@ -3,67 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CleanFlow - Sync Fix</title>
+    <title>CleanFlow Premium</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;500;700&display=swap');
-        body { font-family: 'Anuphan', sans-serif; background-color: #000; color: #fff; overflow: hidden; height: 100vh; }
-        .page { display: none; height: 100vh; overflow-y: auto; padding-bottom: 160px; }
-        .page.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .ios-card { background: rgba(28, 28, 30, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 2rem; }
+        @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;600;700&display=swap');
+        :root { --ios-blue: #007AFF; --ios-green: #34C759; --ios-orange: #FF9500; --ios-bg: #000000; }
+        body { font-family: 'Anuphan', sans-serif; background-color: var(--ios-bg); color: #fff; margin: 0; overflow: hidden; height: 100vh; }
+        
+        .page { display: none; height: 100vh; overflow-y: auto; padding-bottom: 120px; -webkit-overflow-scrolling: touch; }
+        .page.active { display: block; animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .glass-card { background: rgba(28, 28, 30, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; }
+        .nav-active { color: var(--ios-blue) !important; transform: translateY(-5px); }
+        
+        /* Calendar Styles */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        .day-node { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 14px; font-weight: 600; transition: 0.2s; position: relative; }
+        .status-normal { background: rgba(52, 199, 89, 0.2); color: #34C759; border: 1px solid rgba(52, 199, 89, 0.3); }
+        .status-late { background: rgba(255, 149, 0, 0.2); color: #FF9500; border: 1px solid rgba(255, 149, 0, 0.3); }
+        .day-today { border: 2px solid var(--ios-blue) !important; }
+        
+        input[type="time"] { background: transparent; border: none; color: var(--ios-blue); font-weight: bold; font-size: 16px; outline: none; }
+        .btn-press:active { transform: scale(0.96); opacity: 0.8; }
     </style>
 </head>
 <body>
 
-    <main class="pt-[env(safe-area-inset-top)] px-6">
+    <main class="pt-[env(safe-area-inset-top)] px-5">
         
-        <section id="page-home" class="page active pt-10">
-            <header class="mb-8">
-                <p class="text-[10px] font-bold opacity-40 uppercase tracking-widest">เงินเดือนสุทธิ (รวม OT)</p>
-                <h1 class="text-4xl font-bold">฿<span id="salaryDisplay">0.00</span></h1>
-            </header>
-            <div class="grid grid-cols-1 gap-6">
-                <button onclick="checkIn()" class="h-44 ios-card bg-indigo-600 border-none flex flex-col items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-indigo-500/20">
-                    <i class="fa-solid fa-play text-2xl text-white"></i>
-                    <span class="text-xs font-black uppercase tracking-widest">Check In</span>
-                </button>
-                <button onclick="checkOut()" class="h-32 ios-card flex flex-col items-center justify-center gap-2 active:scale-95 transition-all">
-                    <i class="fa-solid fa-stop text-xl opacity-40"></i>
-                    <span class="text-[10px] font-black uppercase tracking-widest opacity-40">Check Out</span>
-                </button>
-            </div>
-        </section>
-
-        <section id="page-history" class="page pt-10">
-            <h2 class="text-2xl font-bold mb-6">ประวัติการทำงาน</h2>
-            <div id="fullHistoryList" class="space-y-4">
+        <section id="page-home" class="page active pt-8">
+            <div class="flex justify-between items-center mb-10">
+                <div>
+                    <p class="text-[11px] font-bold opacity-40 uppercase tracking-widest">Net Salary Estimate</p>
+                    <h1 class="text-4xl font-bold mt-1">฿<span id="salaryDisplay">0.00</span></h1>
                 </div>
+                <div class="w-12 h-12 glass-card flex items-center justify-center text-indigo-400">
+                    <i class="fa-solid fa-wallet text-xl"></i>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <button onclick="checkIn()" class="w-full h-40 glass-card bg-gradient-to-br from-blue-600/20 to-indigo-600/20 border-blue-500/30 flex flex-col items-center justify-center gap-3 btn-press shadow-lg shadow-blue-500/10">
+                    <div class="w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center shadow-lg">
+                        <i class="fa-solid fa-right-to-bracket text-xl"></i>
+                    </div>
+                    <span class="text-xs font-bold tracking-widest uppercase">Check In</span>
+                </button>
+                
+                <button onclick="checkOut()" class="w-full h-24 glass-card flex items-center justify-center gap-4 btn-press">
+                    <i class="fa-solid fa-clock-rotate-left opacity-30 text-xl"></i>
+                    <span class="text-xs font-bold tracking-widest uppercase opacity-40">Check Out</span>
+                </button>
+            </div>
         </section>
 
-        <section id="page-settings" class="page pt-10">
-            <div class="ios-card p-6 mb-6">
-                <label class="text-[10px] font-bold opacity-30 uppercase">เงินเดือนพื้นฐาน</label>
-                <input type="number" id="baseSalary" onchange="saveConfig()" class="w-full bg-transparent text-2xl font-bold border-b border-white/10 py-3 outline-none">
+        <section id="page-calendar" class="page pt-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Dashboard</h2>
+                <div class="flex items-center gap-4 glass-card px-4 py-2">
+                    <button onclick="changeMonth(-1)"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                    <span id="monthDisplay" class="text-sm font-bold min-w-[100px] text-center uppercase tracking-tighter"></span>
+                    <button onclick="changeMonth(1)"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                </div>
             </div>
-            <div id="weeklySched" class="space-y-3"></div>
+
+            <div class="glass-card p-5 mb-6">
+                <div class="calendar-grid mb-4 opacity-30 text-[10px] font-bold text-center">
+                    <div>อา.</div><div>จ.</div><div>อ.</div><div>พ.</div><div>พฤ.</div><div>ศ.</div><div>ส.</div>
+                </div>
+                <div id="calendarDays" class="calendar-grid text-center"></div>
+            </div>
+
+            <div id="dayDetail" class="glass-card p-5 hidden animate-pulse">
+                <p id="detailDate" class="text-[10px] font-bold text-blue-400 uppercase"></p>
+                <div class="flex justify-between mt-2">
+                    <div><p class="text-[10px] opacity-40">IN</p><p id="detailIn" class="text-lg font-bold">-</p></div>
+                    <div><p class="text-[10px] opacity-40 text-right">OUT</p><p id="detailOut" class="text-lg font-bold text-right">-</p></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-shift" class="page pt-8">
+            <h2 class="text-2xl font-bold mb-2">ตารางงานประจำสัปดาห์</h2>
+            <p class="text-[10px] opacity-30 mb-8 uppercase">ระบุเวลาเข้า-ออกปกติของแต่ละวัน</p>
+            <div id="shiftList" class="space-y-3"></div>
+        </section>
+
+        <section id="page-settings" class="page pt-8">
+            <h2 class="text-2xl font-bold mb-6">Settings</h2>
+            <div class="glass-card p-6 mb-8">
+                <label class="text-[10px] font-bold opacity-30 uppercase tracking-widest">เงินเดือนพื้นฐาน</label>
+                <input type="number" id="baseSalary" onchange="saveSalary()" class="w-full bg-transparent text-2xl font-bold border-b border-white/10 py-3 outline-none">
+            </div>
+            
+            <h3 class="text-sm font-bold opacity-30 mb-4 px-2 uppercase">ประวัติการลงเวลาล่าสุด</h3>
+            <div id="recentLogs" class="space-y-3"></div>
         </section>
 
     </main>
 
-    <nav class="fixed bottom-10 left-6 right-6 ios-card p-2 flex justify-around items-center shadow-2xl z-50">
-        <button onclick="switchPage('page-home', this)" class="p-4 text-indigo-500"><i class="fa-solid fa-house"></i></button>
-        <button onclick="switchPage('page-history', this)" class="p-4 text-zinc-500"><i class="fa-solid fa-list-check"></i></button>
-        <button onclick="switchPage('page-settings', this)" class="p-4 text-zinc-500"><i class="fa-solid fa-sliders"></i></button>
+    <nav class="fixed bottom-8 left-6 right-6 glass-card p-2 flex justify-around items-center shadow-2xl z-50">
+        <button onclick="switchPage('page-home', this)" class="p-4 text-zinc-500 transition-all nav-active"><i class="fa-solid fa-house"></i></button>
+        <button onclick="switchPage('page-calendar', this)" class="p-4 text-zinc-500 transition-all"><i class="fa-solid fa-calendar-days"></i></button>
+        <button onclick="switchPage('page-shift', this)" class="p-4 text-zinc-500 transition-all"><i class="fa-solid fa-clock"></i></button>
+        <button onclick="switchPage('page-settings', this)" class="p-4 text-zinc-500 transition-all"><i class="fa-solid fa-gear"></i></button>
     </nav>
 
     <script>
+        // --- Firebase Init ---
         const firebaseConfig = {
             apiKey: "AIzaSyA11zPbXEFs-sdIHKaxhkprkoGSGP1whfg",
             authDomain: "ims-fei.firebaseapp.com",
@@ -73,159 +129,203 @@
             messagingSenderId: "791711191329",
             appId: "1:791711191329:web:0a4ba03cd5f11eb71bae60"
         };
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        const days = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
-        let logs = [];
-        let config = JSON.parse(localStorage.getItem('cf_config')) || { salary: 15000, schedule: {} };
+        const TH_DAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+        const TH_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
 
-        // 1. ดึงข้อมูลจาก Firebase (Real-time)
+        let logs = [];
+        let viewDate = new Date();
+        let config = JSON.parse(localStorage.getItem('cf_premium_v1')) || { salary: 15000, shifts: {} };
+
+        // --- Data Listeners ---
         db.ref('attendance').on('value', snap => {
             const data = snap.val();
             logs = data ? Object.keys(data).map(id => ({ id, ...data[id] })) : [];
-            logs.sort((a, b) => new Date(b.date) - new Date(a.date));
-            render();
+            renderAll();
         });
 
-        // 2. ฟังก์ชันหลัก (Check In / Out)
+        // --- Core Functions ---
         function checkIn() {
             const now = new Date(), date = now.toISOString().split('T')[0], time = now.toTimeString().slice(0, 5);
-            if (logs.find(l => l.date === date)) return toast("วันนี้ลงเวลาไปแล้ว", "info");
+            if (logs.find(l => l.date === date)) return toast("วันนี้ลงเวลาไปแล้วครับ", "info");
             
-            const dayName = days[now.getDay()];
-            const planIn = config.schedule[dayName]?.in || "08:30";
-            const late = diff(planIn, time);
+            const dayName = TH_DAYS[now.getDay()];
+            const planIn = config.shifts[dayName]?.in || "08:30";
+            const late = diffMins(planIn, time);
 
             db.ref('attendance').push({
                 date, checkIn: time, checkOut: "", 
                 late: late > 0 ? late : 0, ot: 0,
-                planIn: planIn, planOut: config.schedule[dayName]?.out || "17:30"
+                planIn, planOut: config.shifts[dayName]?.out || "17:30"
             });
-            toast("ลงเวลาเข้างานเรียบร้อยแล้ว");
+            Swal.fire({ title: "ลงเวลาเข้างานเรียบร้อยแล้ว", icon: "success", timer: 1500, showConfirmButton: false, background: '#1c1c1e', color: '#fff' });
         }
 
         function checkOut() {
             const now = new Date(), date = now.toISOString().split('T')[0], time = now.toTimeString().slice(0, 5);
             const today = logs.find(l => l.date === date);
-            if (!today) return toast("ยังไม่ได้เข้างาน!", "error");
-            
-            const otMin = diff(today.planOut || "17:30", time);
+            if (!today) return toast("ยังไม่ได้ลงเวลาเข้างานนะครับ", "error");
+            if (today.checkOut) return toast("ลงเวลาเลิกงานไปแล้วครับ");
+
+            const otMin = diffMins(today.planOut || "17:30", time);
             db.ref('attendance/' + today.id).update({
                 checkOut: time,
                 ot: otMin > 60 ? Math.floor(otMin / 60) : 0
             });
-            toast("ลงเวลาเลิกงานเรียบร้อยแล้ว");
+            Swal.fire({ title: "ลงเวลาเลิกงานเรียบร้อยแล้ว", icon: "success", timer: 1500, showConfirmButton: false, background: '#1c1c1e', color: '#fff' });
         }
 
-        // 3. ฟังก์ชันแก้ไขและลบ (ส่งค่าไป Firebase)
-        async function editLog(id) {
-            const item = logs.find(l => l.id === id);
-            const { value: form } = await Swal.fire({
-                title: 'แก้ไขเวลา',
-                html: `<input id="in" type="time" class="swal2-input" value="${item.checkIn}">
-                       <input id="out" type="time" class="swal2-input" value="${item.checkOut || ''}">`,
-                preConfirm: () => [document.getElementById('in').value, document.getElementById('out').value],
-                background: '#1c1c1e', color: '#fff', confirmButtonColor: '#6366f1'
-            });
-
-            if (form) {
-                const [nIn, nOut] = form;
-                const late = diff(item.planIn || "08:30", nIn);
-                const ot = nOut ? Math.floor(diff(item.planOut || "17:30", nOut) / 60) : 0;
-                
-                // อัปเดตไปที่ Firebase
-                db.ref('attendance/' + id).update({
-                    checkIn: nIn, checkOut: nOut,
-                    late: late > 0 ? late : 0,
-                    ot: ot > 0 ? ot : 0
-                });
-                toast("แก้ไขข้อมูลในระบบแล้ว");
-            }
+        // --- Renderers ---
+        function renderAll() {
+            renderSalary();
+            renderCalendar();
+            renderHistory();
         }
 
-        function deleteLog(id) {
-            Swal.fire({
-                title: 'ลบรายการนี้?',
-                text: "ข้อมูลใน Firebase จะหายไปถาวร",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                background: '#1c1c1e', color: '#fff'
-            }).then(res => {
-                if (res.isConfirmed) {
-                    db.ref('attendance/' + id).remove(); // ลบจาก Firebase
-                    toast("ลบข้อมูลเรียบร้อย");
-                }
-            });
-        }
-
-        // 4. แสดงผล UI
-        function render() {
-            const currentMonth = new Date().toISOString().slice(0, 7);
-            const mData = logs.filter(l => l.date.startsWith(currentMonth));
-            
+        function renderSalary() {
+            const currentM = new Date().toISOString().slice(0, 7);
+            const mData = logs.filter(l => l.date.startsWith(currentM));
             const totalOT = mData.reduce((s, l) => s + (l.ot || 0), 0);
             const otPay = totalOT * ((config.salary / 30 / 8) * 1.5);
             const net = (parseFloat(config.salary) + otPay) - Math.min(config.salary * 0.05, 750);
-
             document.getElementById('salaryDisplay').innerText = net.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        }
+
+        function renderCalendar() {
+            const year = viewDate.getFullYear();
+            const month = viewDate.getMonth();
+            document.getElementById('monthDisplay').innerText = `${TH_MONTHS[month]} ${year + 543}`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const container = document.getElementById('calendarDays');
+            container.innerHTML = '';
+
+            // Padding days
+            for (let i = 0; i < firstDay; i++) container.innerHTML += '<div></div>';
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const log = logs.find(l => l.date === dateStr);
+                let statusClass = '';
+                if (log) statusClass = log.late > 0 ? 'status-late' : 'status-normal';
+
+                const isToday = new Date().toISOString().split('T')[0] === dateStr ? 'day-today' : '';
+                
+                container.innerHTML += `
+                    <div onclick="showDayDetail('${dateStr}')" class="day-node ${statusClass} ${isToday} btn-press">
+                        ${d}
+                    </div>
+                `;
+            }
+        }
+
+        function showDayDetail(date) {
+            const log = logs.find(l => l.date === date);
+            const panel = document.getElementById('dayDetail');
+            if (!log) return panel.classList.add('hidden');
             
-            document.getElementById('fullHistoryList').innerHTML = mData.map(l => `
-                <div class="ios-card p-5 flex justify-between items-center">
+            panel.classList.remove('hidden');
+            document.getElementById('detailDate').innerText = log.date;
+            document.getElementById('detailIn').innerText = log.checkIn;
+            document.getElementById('detailOut').innerText = log.checkOut || 'ยังไม่ลงชื่อออก';
+        }
+
+        function renderHistory() {
+            const recent = [...logs].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+            document.getElementById('recentLogs').innerHTML = recent.map(l => `
+                <div class="glass-card p-4 flex justify-between items-center">
                     <div>
-                        <p class="text-xs font-bold text-indigo-400">${l.date}</p>
-                        <p class="text-sm font-bold">${l.checkIn} - ${l.checkOut || '...'}</p>
+                        <p class="text-[10px] font-bold opacity-30 uppercase">${l.date}</p>
+                        <p class="text-sm font-bold">${l.checkIn} - ${l.checkOut || '--:--'}</p>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="editLog('${l.id}')" class="w-8 h-8 rounded-full bg-white/5 text-[10px]"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="editLog('${l.id}')" class="w-8 h-8 rounded-full bg-white/5 text-[10px] text-zinc-400"><i class="fa-solid fa-pen"></i></button>
                         <button onclick="deleteLog('${l.id}')" class="w-8 h-8 rounded-full bg-rose-500/10 text-rose-500 text-[10px]"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </div>
             `).join('');
         }
 
-        // 5. Utilities
-        function diff(t1, t2) {
-            const [h1, m1] = t1.split(':').map(Number), [h2, m2] = t2.split(':').map(Number);
-            return (h2 * 60 + m2) - (h1 * 60 + m1);
+        // --- Helpers ---
+        function changeMonth(step) {
+            viewDate.setMonth(viewDate.getMonth() + step);
+            renderCalendar();
         }
 
         function switchPage(id, btn) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            document.querySelectorAll('nav button').forEach(b => b.classList.replace('text-indigo-500', 'text-zinc-500'));
-            btn.classList.replace('text-zinc-500', 'text-indigo-500');
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('nav-active'));
+            btn.classList.add('nav-active');
+            if (navigator.vibrate) navigator.vibrate(10);
         }
 
-        function saveConfig() {
+        function diffMins(t1, t2) {
+            const [h1, m1] = t1.split(':').map(Number), [h2, m2] = t2.split(':').map(Number);
+            return (h2 * 60 + m2) - (h1 * 60 + m1);
+        }
+
+        function saveSalary() {
             config.salary = document.getElementById('baseSalary').value;
-            localStorage.setItem('cf_config', JSON.stringify(config));
-            render();
+            saveAndRender();
         }
 
-        function saveWeekly(day, type, val) {
-            if (!config.schedule[day]) config.schedule[day] = {};
-            config.schedule[day][type] = val;
-            localStorage.setItem('cf_config', JSON.stringify(config));
+        function saveShift(day, type, val) {
+            if (!config.shifts[day]) config.shifts[day] = {};
+            config.shifts[day][type] = val;
+            saveAndRender();
         }
 
-        function toast(m, i = "success") { Swal.fire({ title: m, icon: i, timer: 1500, showConfirmButton: false, background: '#1c1c1e', color: '#fff' }); }
+        function saveAndRender() {
+            localStorage.setItem('cf_premium_v1', JSON.stringify(config));
+            renderAll();
+        }
 
+        function toast(m, i="success") { Swal.fire({ title: m, icon: i, timer: 1500, showConfirmButton: false, background: '#1c1c1e', color: '#fff' }); }
+
+        // --- Init ---
         window.onload = () => {
             document.getElementById('baseSalary').value = config.salary;
-            const container = document.getElementById('weeklySched');
-            container.innerHTML = days.map(d => `
-                <div class="ios-card p-4 flex justify-between items-center text-xs">
-                    <span class="font-bold">${d}</span>
-                    <div class="flex gap-2">
-                        <input type="time" value="${config.schedule[d]?.in || '08:30'}" onchange="saveWeekly('${d}', 'in', this.value)">
-                        <input type="time" value="${config.schedule[d]?.out || '17:30'}" onchange="saveWeekly('${d}', 'out', this.value)">
+            const shiftContainer = document.getElementById('shiftList');
+            shiftContainer.innerHTML = TH_DAYS.map(d => `
+                <div class="glass-card p-4 flex justify-between items-center">
+                    <span class="text-sm font-bold">${d}</span>
+                    <div class="flex gap-3">
+                        <input type="time" value="${config.shifts[d]?.in || '08:30'}" onchange="saveShift('${d}', 'in', this.value)">
+                        <input type="time" value="${config.shifts[d]?.out || '17:30'}" onchange="saveShift('${d}', 'out', this.value)">
                     </div>
                 </div>
             `).join('');
-            render();
+            renderAll();
         };
+
+        // Reuse edit/delete functions from previous versions...
+        async function editLog(id) {
+            const item = logs.find(l => l.id === id);
+            const { value: form } = await Swal.fire({
+                title: 'แก้ไขเวลา',
+                html: `<div class="p-2 space-y-4">
+                        <div><p class="text-[10px] opacity-40 mb-1">IN</p><input id="in" type="time" class="w-full bg-zinc-800 p-3 rounded-xl" value="${item.checkIn}"></div>
+                        <div><p class="text-[10px] opacity-40 mb-1">OUT</p><input id="out" type="time" class="w-full bg-zinc-800 p-3 rounded-xl" value="${item.checkOut || ''}"></div>
+                       </div>`,
+                preConfirm: () => [document.getElementById('in').value, document.getElementById('out').value],
+                background: '#1c1c1e', color: '#fff', confirmButtonColor: '#007AFF'
+            });
+            if (form) {
+                const [nIn, nOut] = form;
+                db.ref('attendance/' + id).update({ checkIn: nIn, checkOut: nOut });
+                toast("อัปเดตระบบแล้ว");
+            }
+        }
+
+        function deleteLog(id) {
+            Swal.fire({ title: 'ลบข้อมูล?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#FF3B30', background: '#1c1c1e', color: '#fff' }).then(res => {
+                if (res.isConfirmed) db.ref('attendance/' + id).remove();
+            });
+        }
     </script>
 </body>
 </html>
