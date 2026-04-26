@@ -1,10 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;600&display=swap');
 
+* {
+    font-family: 'Anuphan', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation; /* กัน Double Tap to Zoom สำคัญมาก */
+}
+
 body { 
-    font-family: 'Anuphan', sans-serif; 
     background: #000; 
     color: white; 
-    -webkit-tap-highlight-color: transparent; 
+    margin: 0; 
+    user-select: none;
 }
 
 .glass-card { 
@@ -21,45 +27,46 @@ body {
 }
 
 @keyframes slideUp { 
-    from { opacity: 0; transform: translateY(20px); } 
+    from { opacity: 0; transform: translateY(15px); } 
     to { opacity: 1; transform: translateY(0); } 
 }
 
 .nav-btn { color: #52525b; transition: 0.3s; }
-.nav-btn.active { color: #3b82f6; transform: translateY(-4px); }
+.nav-btn.active { color: #3b82f6; transform: translateY(-3px); }
 
-.st-normal { 
-    background: rgba(59, 130, 246, 0.1); 
-    border: 1px solid rgba(59, 130, 246, 0.3); 
-    color: #3b82f6; 
-}
-
-.st-off { 
-    background: rgba(239, 68, 68, 0.1); 
-    border: 1px solid rgba(239, 68, 68, 0.3); 
-    color: #ef4444; 
-}
-
+/* ปฏิทิน */
 .day-node { 
     aspect-ratio: 1; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
     border-radius: 14px; 
-    font-size: 11px; 
     font-weight: 600; 
+    font-size: 11px; 
     cursor: pointer; 
+    transition: 0.2s;
+}
+
+.st-normal { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #3b82f6; }
+.st-off { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; }
+.st-holiday { 
+    background: rgba(249, 115, 22, 0.1) !important; 
+    border: 1px solid rgba(249, 115, 22, 0.4) !important; 
+    color: #f97316 !important; 
+}
+
+input, select { 
+    font-size: 16px !important; /* iOS จะไม่ซูมเข้าเมื่อคลิกช่อง Input ถ้า font >= 16px */
 }
 
 .time-pill { 
     background: rgba(255, 255, 255, 0.08); 
-    border: none; 
-    color: #fff; 
-    padding: 8px 12px; 
+    padding: 10px; 
     border-radius: 12px; 
-    font-size: 11px; 
-    outline: none; 
+    color: white; 
+    width: 100%; 
+    border: none; 
+    outline: none;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar { width: 0px; background: transparent; }
+::-webkit-scrollbar { width: 0; }
