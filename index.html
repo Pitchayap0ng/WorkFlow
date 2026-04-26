@@ -1,328 +1,151 @@
 <!DOCTYPE html>
 <html lang="th" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>IMS-Workflow Pro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;600;700&display=swap');
-        :root { --ios-blue: #007AFF; --ios-bg: #000; }
-        body { 
-            font-family: 'Anuphan', sans-serif; 
-            background: var(--ios-bg); 
-            color: #fff; 
-            margin: 0; 
-            overflow: hidden; 
-            height: 100vh;
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-        .glass-card { background: rgba(28, 28, 30, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; }
-        .input-ios { background: #1c1c1e; border: none; border-radius: 12px; padding: 14px 16px; color: white; width: 100%; outline: none; }
-        .time-pill { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 6px 10px; font-size: 14px; font-weight: 600; color: var(--ios-blue); text-align: center; outline: none; }
-        .page { display: none; height: 100vh; overflow-y: auto; padding-bottom: 120px; }
-        .page.active { display: block; animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
-        .day-node { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 14px; position: relative; cursor: pointer; }
-        .st-normal { background: rgba(52, 199, 89, 0.1); color: #34C759; }
-        .st-off { opacity: 0.3; background: rgba(255, 255, 255, 0.05); }
-        .nav-btn.active { color: var(--ios-blue) !important; }
-    </style>
-</head>
-<body>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+        <title>IMS-Workflow Pro</title>
 
-    <div id="auth-ui" class="p-8 pt-24 space-y-8 h-screen overflow-y-auto">
-        <div id="login-box" class="space-y-6">
-            <h1 class="text-4xl font-bold text-blue-500">IMS-Workflow</h1>
-            <p class="opacity-50">เข้าสู่ระบบเพื่อจัดการงานของคุณ</p>
-            <div class="space-y-3">
-                <input type="text" id="l-id" placeholder="Username หรือ อีเมล" class="input-ios">
-                <input type="password" id="l-pw" placeholder="รหัสผ่าน" class="input-ios">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script
+            src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+        <script
+            src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+        <script
+            src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+        <link rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+
+        <div id="auth-ui" class="p-8 pt-24 space-y-8 h-screen overflow-y-auto">
+            <div id="login-box" class="space-y-6">
+                <h1 class="text-4xl font-bold text-blue-500">IMS-Workflow</h1>
+                <p class="opacity-50">เข้าสู่ระบบเพื่อจัดการงานของคุณ</p>
+                <div class="space-y-3">
+                    <input type="text" id="l-id"
+                        placeholder="Username หรือ อีเมล" class="input-ios">
+                    <input type="password" id="l-pw" placeholder="รหัสผ่าน"
+                        class="input-ios">
+                </div>
+                <button onclick="doLogin()"
+                    class="w-full bg-blue-600 py-4 rounded-2xl font-bold">เข้าสู่ระบบ</button>
+                <button onclick="toggleAuth(true)"
+                    class="w-full text-blue-500 text-sm font-semibold">สมัครสมาชิกใหม่</button>
             </div>
-            <button onclick="doLogin()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold">เข้าสู่ระบบ</button>
-            <button onclick="toggleAuth(true)" class="w-full text-blue-500 text-sm font-semibold">สมัครสมาชิกใหม่</button>
+
+            <div id="reg-box" class="space-y-6 hidden">
+                <h1 class="text-4xl font-bold text-green-500">สมัครสมาชิก</h1>
+                <div class="space-y-3">
+                    <input type="text" id="r-user"
+                        placeholder="Username (ภาษาอังกฤษ)" class="input-ios">
+                    <input type="email" id="r-mail" placeholder="อีเมล"
+                        class="input-ios">
+                    <input type="password" id="r-pw"
+                        placeholder="รหัสผ่าน (6 ตัวขึ้นไป)" class="input-ios">
+                    <input type="text" id="r-name" placeholder="ชื่อเล่น"
+                        class="input-ios">
+                </div>
+                <button onclick="sendOTP()"
+                    class="w-full bg-green-600 py-4 rounded-2xl font-bold">รับรหัส
+                    OTP</button>
+                <button onclick="toggleAuth(false)"
+                    class="w-full text-zinc-500 text-sm">กลับไปหน้าล็อกอิน</button>
+            </div>
         </div>
 
-        <div id="reg-box" class="space-y-6 hidden">
-            <h1 class="text-4xl font-bold text-green-500">สมัครสมาชิก</h1>
-            <div class="space-y-3">
-                <input type="text" id="r-user" placeholder="Username (ภาษาอังกฤษ)" class="input-ios">
-                <input type="email" id="r-mail" placeholder="อีเมล" class="input-ios">
-                <input type="password" id="r-pw" placeholder="รหัสผ่าน (6 ตัวขึ้นไป)" class="input-ios">
-                <input type="text" id="r-name" placeholder="ชื่อเล่น" class="input-ios">
-            </div>
-            <button onclick="sendOTP()" class="w-full bg-green-600 py-4 rounded-2xl font-bold">รับรหัส OTP เพื่อยืนยัน</button>
-            <button onclick="toggleAuth(false)" class="w-full text-zinc-500 text-sm">กลับไปหน้าล็อกอิน</button>
-        </div>
-    </div>
-
-    <div id="app-ui" class="hidden">
-        <main class="px-5 pt-12">
-            <section id="p-home" class="page active">
-                <div class="flex justify-between items-center mb-10">
-                    <div class="text-left">
-                        <p class="text-xs opacity-40">ยินดีต้อนรับ <span id="admin-tag" class="hidden text-red-500 font-bold ml-1 text-[10px] border border-red-500 px-1 rounded">ADMIN</span></p>
-                        <h2 id="u-display" class="text-xl font-bold tracking-tight">...</h2>
+        <div id="app-ui" class="hidden">
+            <main class="px-5 pt-12">
+                <section id="p-home" class="page active">
+                    <div class="flex justify-between items-center mb-10">
+                        <div class="text-left">
+                            <p class="text-xs opacity-40 uppercase">ยินดีต้อนรับ
+                                <span id="admin-tag"
+                                    class="hidden text-red-500 font-bold ml-1 text-[10px] border border-red-500 px-1 rounded">ADMIN</span></p>
+                            <h2 id="u-display"
+                                class="text-xl font-bold tracking-tight">...</h2>
+                        </div>
+                        <img
+                            src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                            class="w-10 h-10 rounded-full border border-white/10">
                     </div>
-                    <img id="u-img" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-10 h-10 rounded-full border border-white/10">
-                </div>
-                <div class="text-center">
-                    <p class="text-[10px] opacity-30 uppercase font-bold tracking-widest">ยอดเงินสะสมเดือนนี้</p>
-                    <h1 class="text-5xl font-bold mt-2">฿<span id="salary-view">0.00</span></h1>
-                </div>
-                <div class="grid grid-cols-2 gap-4 mt-12">
-                    <button onclick="tapIn()" class="h-44 glass-card bg-blue-600/10 flex flex-col items-center justify-center gap-4">
-                        <i class="fa-solid fa-bolt text-3xl text-blue-500"></i>
-                        <span class="font-bold tracking-widest text-[10px]">CHECK IN</span>
-                    </button>
-                    <button onclick="tapOut()" class="h-44 glass-card flex flex-col items-center justify-center gap-4">
-                        <i class="fa-solid fa-moon text-3xl text-zinc-600"></i>
-                        <span class="font-bold tracking-widest text-[10px] opacity-40">CHECK OUT</span>
-                    </button>
-                </div>
-            </section>
-
-            <section id="p-week" class="page">
-                <h2 class="text-2xl font-bold mb-2">ตารางสัปดาห์</h2>
-                <p class="text-[10px] opacity-40 mb-6 uppercase">ระบุกะงานมาตรฐานของคุณ</p>
-                <div id="week-list" class="space-y-3"></div>
-            </section>
-
-            <section id="p-cal" class="page">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold">ปฏิทิน</h2>
-                    <div class="flex items-center gap-4 bg-white/5 px-4 py-2 rounded-full">
-                        <button onclick="moveMonth(-1)"><i class="fa-solid fa-chevron-left text-xs"></i></button>
-                        <span id="mon-view" class="text-xs font-bold w-20 text-center"></span>
-                        <button onclick="moveMonth(1)"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                    <div class="text-center">
+                        <p
+                            class="text-[10px] opacity-30 uppercase font-bold tracking-widest">ยอดเงินสะสมเดือนนี้</p>
+                        <h1 class="text-5xl font-bold mt-2">฿<span
+                                id="salary-view">0.00</span></h1>
                     </div>
-                </div>
-                <div class="glass-card p-4">
-                    <div class="calendar-grid mb-4 opacity-20 text-[10px] font-bold text-center uppercase">
-                        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-                    </div>
-                    <div id="cal-grid" class="calendar-grid"></div>
-                </div>
-            </section>
-        </main>
-
-        <nav class="fixed bottom-8 left-6 right-6 glass-card p-2 flex justify-around items-center">
-            <button onclick="go('p-home', this)" class="nav-btn active p-4 text-zinc-500"><i class="fa-solid fa-house"></i></button>
-            <button onclick="go('p-week', this)" class="nav-btn p-4 text-zinc-500"><i class="fa-solid fa-clock"></i></button>
-            <button onclick="go('p-cal', this)" class="nav-btn p-4 text-zinc-500"><i class="fa-solid fa-calendar-alt"></i></button>
-            <button onclick="auth.signOut()" class="p-4 text-red-900/50"><i class="fa-solid fa-power-off"></i></button>
-        </nav>
-    </div>
-
-    <script>
-        // --- 1. CONFIGURATION ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyA11zPbXEFs-sdIHKaxhkprkoGSGP1whfg",
-            authDomain: "ims-fei.firebaseapp.com",
-            databaseURL: "https://ims-fei-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "ims-fei",
-            storageBucket: "ims-fei.firebasestorage.app",
-            appId: "1:791711191329:web:0a4ba03cd5f11eb71bae60"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth(), db = firebase.database();
-        
-        // EmailJS Init
-        emailjs.init("WSvF2N1nopC2xfuZo"); // แก้เป็น Public Key ของคุณ
-
-        let currentUser = null, userData = {}, logs = [], viewDate = new Date(), otp = null, regInfo = {};
-        const DAYS = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
-
-        // --- 2. AUTHENTICATION LOGIC ---
-        function toggleAuth(isReg) {
-            document.getElementById('login-box').classList.toggle('hidden', isReg);
-            document.getElementById('reg-box').classList.toggle('hidden', !isReg);
-        }
-
-        async function doLogin() {
-            const id = document.getElementById('l-id').value.trim(), pw = document.getElementById('l-pw').value;
-            if(!id || !pw) return toast("กรอกข้อมูลให้ครบ", "error");
-            try {
-                let email = id;
-                if(!id.includes('@')) {
-                    const snap = await db.ref('usernames/' + id.toLowerCase()).once('value');
-                    if(!snap.exists()) return toast("ไม่พบ Username", "error");
-                    email = snap.val().email;
-                }
-                await auth.signInWithEmailAndPassword(email, pw);
-            } catch(e) { toast("ข้อมูลไม่ถูกต้อง", "error"); }
-        }
-
-        async function sendOTP() {
-            const user = document.getElementById('r-user').value.trim().toLowerCase();
-            const mail = document.getElementById('r-mail').value.trim();
-            const pw = document.getElementById('r-pw').value;
-            const name = document.getElementById('r-name').value;
-
-            if(!user || !mail || pw.length < 6) return toast("กรอกข้อมูลให้ครบ (รหัส 6 ตัวขึ้นไป)", "error");
-            const snap = await db.ref('usernames/' + user).once('value');
-            if(snap.exists()) return toast("Username นี้มีคนใช้แล้ว", "error");
-
-            otp = Math.floor(100000 + Math.random() * 900000).toString();
-            regInfo = { user, mail, pw, name };
-
-            emailjs.send("IMS-work", "template_f6zcr42", { 
-                to_email: mail, 
-                otp_code: otp,
-                time: new Date(Date.now() + 15 * 60000).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
-            })
-            .then(() => {
-                Swal.fire({
-                    title: 'ยืนยัน OTP', text: 'รหัสถูกส่งไปที่ ' + mail,
-                    input: 'text', background: '#1c1c1e', color: '#fff',
-                    preConfirm: (v) => { if(v !== otp) Swal.showValidationMessage('รหัสไม่ถูกต้อง'); return v; }
-                }).then(r => { if(r.isConfirmed) finalizeReg(); });
-            }).catch(e => toast("ส่งเมลไม่สำเร็จ เช็ค EmailJS", "error"));
-        }
-
-        async function finalizeReg() {
-            try {
-                const res = await auth.createUserWithEmailAndPassword(regInfo.mail, regInfo.pw);
-                const uid = res.user.uid;
-                await db.ref('users/' + uid).set({ 
-                    username: regInfo.user, 
-                    displayName: regInfo.name, 
-                    email: regInfo.mail, 
-                    salary: 15000,
-                    isAdmin: false // ค่าเริ่มต้นเป็น User ปกติ
-                });
-                await db.ref('usernames/' + regInfo.user).set({ email: regInfo.mail, uid: uid });
-                toast("สมัครสำเร็จ!");
-            } catch(e) { toast(e.message, "error"); }
-        }
-
-        // --- 3. APP LOGIC ---
-        auth.onAuthStateChanged(u => {
-            currentUser = u;
-            document.getElementById('auth-ui').classList.toggle('hidden', !!u);
-            document.getElementById('app-ui').classList.toggle('hidden', !u);
-            if(u) init();
-        });
-
-        function init() {
-            db.ref('users/' + currentUser.uid).on('value', s => { 
-                userData = s.val() || {}; 
-                document.getElementById('u-display').innerText = userData.displayName || 'User';
-                document.getElementById('salary-view').innerText = (userData.salary || 0).toLocaleString();
-                
-                // เช็คสถานะ Admin เพื่อแสดงผล Tag
-                if(userData.isAdmin) document.getElementById('admin-tag').classList.remove('hidden');
-                
-                renderWeekly(); 
-            });
-            db.ref('attendance/' + currentUser.uid).on('value', s => {
-                const d = s.val();
-                logs = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
-                renderCal();
-            });
-        }
-
-        function renderWeekly() {
-            const list = document.getElementById('week-list');
-            list.innerHTML = DAYS.map(d => {
-                const s = userData.shifts?.[d] || { in: '08:30', out: '17:30', isOff: false };
-                return `
-                <div class="glass-card p-4 flex justify-between items-center ${s.isOff ? 'opacity-30' : ''}">
-                    <div class="flex flex-col">
-                        <span class="font-bold text-sm">${d}</span>
-                        <button onclick="setOff('${d}', ${!s.isOff})" class="text-[10px] text-left ${s.isOff ? 'text-red-500' : 'text-blue-500'}">
-                            ${s.isOff ? 'วันหยุด' : 'วันทำงาน'}
+                    <div class="grid grid-cols-2 gap-4 mt-12">
+                        <button onclick="tapIn()"
+                            class="h-44 glass-card bg-blue-600/10 flex flex-col items-center justify-center gap-4 active:scale-95 transition-transform">
+                            <i
+                                class="fa-solid fa-bolt text-3xl text-blue-500"></i>
+                            <span
+                                class="font-bold tracking-widest text-[10px]">CHECK
+                                IN</span>
+                        </button>
+                        <button onclick="tapOut()"
+                            class="h-44 glass-card flex flex-col items-center justify-center gap-4 active:scale-95 transition-transform">
+                            <i
+                                class="fa-solid fa-moon text-3xl text-zinc-600"></i>
+                            <span
+                                class="font-bold tracking-widest text-[10px] opacity-40">CHECK
+                                OUT</span>
                         </button>
                     </div>
-                    <div class="flex gap-2">
-                        <input type="time" class="time-pill" value="${s.in}" onchange="setShift('${d}','in',this.value)" ${s.isOff ? 'disabled' : ''}>
-                        <input type="time" class="time-pill" value="${s.out}" onchange="setShift('${d}','out',this.value)" ${s.isOff ? 'disabled' : ''}>
-                    </div>
-                </div>`;
-            }).join('');
-        }
+                </section>
 
-        function setShift(d, k, v) { db.ref(`users/${currentUser.uid}/shifts/${d}/${k}`).set(v); }
-        function setOff(d, v) { db.ref(`users/${currentUser.uid}/shifts/${d}/isOff`).set(v); }
+                <section id="p-week" class="page">
+                    <h2 class="text-2xl font-bold mb-2">ตารางสัปดาห์</h2>
+                    <p
+                        class="text-[10px] opacity-40 mb-6 uppercase">ระบุกะงานมาตรฐานของคุณ</p>
+                    <div id="week-list" class="space-y-3"></div>
+                </section>
 
-        async function editDay(date) {
-            const log = logs.find(l => l.date === date) || { checkIn: '', checkOut: '', isOff: false };
-            const { value: res } = await Swal.fire({
-                title: date, background: '#1c1c1e', color: '#fff',
-                html: `
-                    <div class="text-left space-y-4">
-                        <label class="flex justify-between items-center bg-white/5 p-3 rounded-xl">
-                            <span>วันนี้เป็นวันหยุด</span>
-                            <input type="checkbox" id="e-off" ${log.isOff ? 'checked' : ''} class="w-5 h-5">
-                        </label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <input type="time" id="e-in" class="time-pill w-full" value="${log.checkIn}">
-                            <input type="time" id="e-out" class="time-pill w-full" value="${log.checkOut}">
+                <section id="p-cal" class="page">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold">ปฏิทิน</h2>
+                        <div
+                            class="flex items-center gap-4 bg-white/5 px-4 py-2 rounded-full">
+                            <button onclick="moveMonth(-1)"><i
+                                    class="fa-solid fa-chevron-left text-xs"></i></button>
+                            <span id="mon-view"
+                                class="text-xs font-bold w-24 text-center"></span>
+                            <button onclick="moveMonth(1)"><i
+                                    class="fa-solid fa-chevron-right text-xs"></i></button>
                         </div>
-                        ${log.id ? `<button onclick="delLog('${log.id}')" class="w-full text-red-500 text-xs py-2 mt-4"><i class="fa-solid fa-trash"></i> ลบข้อมูลวันนี้</button>` : ''}
-                    </div>`,
-                showCancelButton: true, confirmButtonText: 'บันทึก',
-                preConfirm: () => ({ isOff: document.getElementById('e-off').checked, checkIn: document.getElementById('e-in').value, checkOut: document.getElementById('e-out').value })
-            });
-            if(res) {
-                if(log.id) db.ref(`attendance/${currentUser.uid}/${log.id}`).update({ ...res, date });
-                else db.ref(`attendance/${currentUser.uid}`).push({ ...res, date });
-            }
-        }
+                    </div>
+                    <div class="glass-card p-4">
+                        <div
+                            class="calendar-grid mb-4 opacity-20 text-[10px] font-bold text-center uppercase">
+                            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                        </div>
+                        <div id="cal-grid" class="calendar-grid"></div>
+                    </div>
+                </section>
+            </main>
 
-        window.delLog = (id) => { 
-            db.ref(`attendance/${currentUser.uid}/${id}`).remove(); 
-            Swal.close(); 
-            toast("ลบข้อมูลแล้ว");
-        };
+            <nav
+                class="fixed bottom-8 left-6 right-6 glass-card p-2 flex justify-around items-center">
+                <button onclick="go('p-home', this)"
+                    class="nav-btn active p-4 text-zinc-500"><i
+                        class="fa-solid fa-house"></i></button>
+                <button onclick="go('p-week', this)"
+                    class="nav-btn p-4 text-zinc-500"><i
+                        class="fa-solid fa-clock"></i></button>
+                <button onclick="go('p-cal', this)"
+                    class="nav-btn p-4 text-zinc-500"><i
+                        class="fa-solid fa-calendar-alt"></i></button>
+                <button onclick="auth.signOut()" class="p-4 text-red-900/50"><i
+                        class="fa-solid fa-power-off"></i></button>
+            </nav>
+        </div>
 
-        function renderCal() {
-            const y = viewDate.getFullYear(), m = viewDate.getMonth();
-            document.getElementById('mon-view').innerText = `${m+1}/${y+543}`;
-            const total = new Date(y, m+1, 0).getDate(), start = new Date(y, m, 1).getDay();
-            const grid = document.getElementById('cal-grid');
-            grid.innerHTML = '';
-            for(let i=0; i<start; i++) grid.innerHTML += '<div></div>';
-            for(let d=1; d<=total; d++) {
-                const date = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                const log = logs.find(l => l.date === date);
-                const cls = log ? (log.isOff ? 'st-off' : 'st-normal') : 'bg-white/5';
-                grid.innerHTML += `<div onclick="editDay('${date}')" class="day-node ${cls}">${d}</div>`;
-            }
-        }
-
-        function tapIn() {
-            const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
-            if(logs.find(l => l.date === d)) return toast("วันนี้เช็คอินไปแล้ว", "info");
-            db.ref(`attendance/${currentUser.uid}`).push({ date: d, checkIn: t, checkOut: '', isOff: false });
-            toast("Check In เรียบร้อย");
-        }
-
-        function tapOut() {
-            const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
-            const log = logs.find(l => l.date === d);
-            if(!log) return toast("ยังไม่ได้เช็คอินวันนี้", "error");
-            db.ref(`attendance/${currentUser.uid}/${log.id}`).update({ checkOut: t });
-            toast("Check Out เรียบร้อย");
-        }
-
-        function go(id, btn) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        }
-
-        function moveMonth(v) { viewDate.setMonth(viewDate.getMonth() + v); renderCal(); }
-        function toast(m, i="success") { Swal.fire({ title: m, icon: i, timer: 1500, showConfirmButton: false, background: '#1c1c1e', color: '#fff' }); }
-    </script>
-</body>
+        <script src="app.js"></script>
+    </body>
 </html>
