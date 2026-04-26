@@ -1,4 +1,3 @@
-// --- Firebase Configuration ---
 const firebaseConfig = {
     apiKey: "AIzaSyA11zPbXEFs-sdIHKaxhkprkoGSGP1whfg",
     authDomain: "ims-fei.firebaseapp.com",
@@ -16,19 +15,19 @@ let currentUser = null, userData = {}, logs = [], viewDate = new Date();
 const DAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
 const MONTHS = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
 
-// --- Auth & Init ---
+// --- 1. CORE & LOGIN ---
 async function doLogin() {
     const id = document.getElementById('l-id').value.trim(), pw = document.getElementById('l-pw').value;
-    if(!id || !pw) return toast("กรุณากรอกข้อมูล", "warning");
+    if(!id || !pw) return;
     try {
         let email = id;
         if (!id.includes('@')) {
             const snap = await db.ref('usernames/' + id.toLowerCase()).once('value');
-            if (!snap.exists()) return toast("ไม่พบผู้ใช้งาน", "error");
+            if (!snap.exists()) return alert("User not found");
             email = snap.val().email;
         }
         await auth.signInWithEmailAndPassword(email, pw);
-    } catch (e) { toast("เข้าสู่ระบบไม่สำเร็จ", "error"); }
+    } catch (e) { alert("Login Failed"); }
 }
 
 auth.onAuthStateChanged(u => {
@@ -41,14 +40,14 @@ auth.onAuthStateChanged(u => {
             updateUI();
             if (userData.role === 'admin') {
                 document.getElementById('nav-admin').classList.remove('hidden');
-                loadAdminList();
+                loadAdmin();
             }
         });
         db.ref('attendance/' + u.uid).on('value', s => {
             const d = s.val();
             logs = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
             renderCal();
-            calculateSalary();
+            calculate();
         });
     }
 });
@@ -60,54 +59,44 @@ function updateUI() {
     renderSchedule();
 }
 
-// --- Profile & Admin Edit ---
+// --- 2. EDIT LOGIC (ตรงนี้ที่ต้องการเพิ่ม) ---
+
 async function editProfile() {
     const { value: res } = await Swal.fire({
-        title: 'แก้ไขโปรไฟล์',
+        title: 'Edit Profile',
         background: '#1c1c1e', color: '#fff',
-        html: `<input id="sw-name" class="w-full bg-white/5 p-4 rounded-xl mb-4" value="${userData.displayName || ''}" placeholder="ชื่อเล่น">`,
+        html: `
+            <div class="mb-4" onclick="document.getElementById('file-input').click()">
+                <img src="${userData.photoURL || ''}" class="w-20 h-20 rounded-full mx-auto border-2 border-blue-500 object-cover">
+            </div>
+            <input id="sw-name" class="w-full bg-white/5 p-4 rounded-xl" value="${userData.displayName || ''}" placeholder="Display Name">`,
         showCancelButton: true,
-        confirmButtonText: 'บันทึก',
+        confirmButtonText: 'Save',
         preConfirm: () => ({ displayName: document.getElementById('sw-name').value })
     });
     if (res) await db.ref('users/' + currentUser.uid).update(res);
 }
 
-function loadAdminList() {
-    const list = document.getElementById('user-list');
-    db.ref('users').on('value', s => {
-        const users = s.val();
-        if (!users) return;
-        list.innerHTML = Object.keys(users).map(uid => `
-            <div onclick="adminManageUser('${uid}')" class="glass-card p-4 flex items-center justify-between mb-2">
-                <div class="flex items-center gap-3">
-                    <img src="${users[uid].photoURL || ''}" class="w-10 h-10 rounded-full bg-zinc-800">
-                    <div><p class="font-bold text-sm">${users[uid].displayName || users[uid].username}</p></div>
-                </div>
-                <i class="fa-solid fa-chevron-right opacity-20"></i>
-            </div>`).join('');
-    });
-}
-
-async function adminManageUser(targetUid) {
-    const snap = await db.ref('users/' + targetUid).once('value');
+// Admin จัดการคนอื่น
+async function adminEdit(uid) {
+    const snap = await db.ref('users/' + uid).once('value');
     const u = snap.val();
     const { value: res } = await Swal.fire({
-        title: 'จัดการพนักงาน',
+        title: 'Manage Employee',
         background: '#1c1c1e', color: '#fff',
         html: `
-            <input id="adm-sal" type="number" class="w-full bg-white/5 p-4 rounded-xl mb-2" value="${u.salary || 15000}" placeholder="เงินเดือน">
-            <select id="adm-role" class="w-full bg-white/5 p-4 rounded-xl text-white">
+            <input id="ad-sal" type="number" class="w-full bg-white/5 p-4 rounded-xl mb-2" value="${u.salary || 15000}" placeholder="Salary">
+            <select id="ad-role" class="w-full bg-white/5 p-4 rounded-xl text-white">
                 <option value="staff" ${u.role==='staff'?'selected':''}>Staff</option>
                 <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
             </select>`,
         showCancelButton: true,
-        preConfirm: () => ({ salary: parseFloat(document.getElementById('adm-sal').value), role: document.getElementById('adm-role').value })
+        preConfirm: () => ({ salary: parseFloat(document.getElementById('ad-sal').value), role: document.getElementById('ad-role').value })
     });
-    if (res) await db.ref('users/' + targetUid).update(res);
+    if (res) await db.ref('users/' + uid).update(res);
 }
 
-// --- Attendance & Logic ---
+// แก้ไขวันที่ในปฏิทิน (เพิ่มปุ่มลบ)
 async function manageLog(ds) {
     const log = logs.find(l => l.date === ds);
     const { value: action } = await Swal.fire({
@@ -115,8 +104,8 @@ async function manageLog(ds) {
         background: '#1c1c1e', color: '#fff',
         showDenyButton: !!log,
         showCancelButton: true,
-        confirmButtonText: log ? 'แก้ไข' : 'เพิ่ม',
-        denyButtonText: 'ลบ',
+        confirmButtonText: log ? 'Update' : 'Add',
+        denyButtonText: 'Delete',
         denyButtonColor: '#ef4444'
     });
 
@@ -138,30 +127,23 @@ async function manageLog(ds) {
     }
 }
 
-function calculateSalary() {
-    const daily = (userData.salary || 15000) / 30;
-    let total = 0, todayB = 0;
-    logs.forEach(l => {
-        if (new Date(l.date).getMonth() === new Date().getMonth()) {
-            if (l.checkIn && !l.isOff) total += daily;
-            total += (l.delivery || 0) * 15;
-            if (l.date === new Date().toISOString().split('T')[0]) todayB = l.delivery || 0;
-        }
+// --- 3. DISPLAY LOGIC (เหมือนเดิมที่คุณชอบ) ---
+
+function loadAdmin() {
+    const list = document.getElementById('user-list');
+    db.ref('users').on('value', s => {
+        const users = s.val(); if(!users) return;
+        list.innerHTML = Object.keys(users).map(uid => `
+            <div onclick="adminEdit('${uid}')" class="glass-card p-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <img src="${users[uid].photoURL || ''}" class="w-10 h-10 rounded-full bg-zinc-800">
+                    <p class="font-bold text-sm">${users[uid].displayName || users[uid].username}</p>
+                </div>
+                <i class="fa-solid fa-chevron-right opacity-20"></i>
+            </div>`).join('');
     });
-    document.getElementById('salary-view').innerText = total.toLocaleString(undefined, {minimumFractionDigits: 2});
-    document.getElementById('today-bills').innerText = todayB;
 }
 
-// --- Utils ---
-function toast(m, i="success") { Swal.fire({ title: m, icon: i, timer: 1500, showConfirmButton: false, background: '#1c1c1e', color: '#fff' }); }
-function confirmLogout() { Swal.fire({ title: 'ออกจากระบบ?', showCancelButton: true, background: '#1c1c1e', color: '#fff' }).then(r => { if (r.isConfirmed) auth.signOut(); }); }
-function go(id, btn) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-}
-function moveMonth(v) { viewDate.setMonth(viewDate.getMonth() + v); renderCal(); }
 function renderCal() {
     const y = viewDate.getFullYear(), m = viewDate.getMonth();
     document.getElementById('mon-view').innerText = `${MONTHS[m]} ${y + 543}`;
@@ -175,6 +157,7 @@ function renderCal() {
         grid.innerHTML += `<div onclick="manageLog('${ds}')" class="day-node ${log ? (log.isOff ? 'st-off' : 'st-normal') : 'bg-white/5'}">${d}</div>`;
     }
 }
+
 function renderSchedule() {
     const list = document.getElementById('week-list');
     if(!list) return;
@@ -182,12 +165,35 @@ function renderSchedule() {
         const s = (userData.shifts && userData.shifts[d]) ? userData.shifts[d] : { in: '08:30', out: '17:30', isOff: false };
         return `<div class="glass-card p-4 flex justify-between items-center ${s.isOff ? 'opacity-30' : ''}">
             <div class="font-bold text-xs">${d}</div>
-            <div class="flex gap-2">
+            <div class="flex gap-2 items-center">
                 <input type="time" class="time-pill" value="${s.in}" onchange="db.ref('users/${currentUser.uid}/shifts/${d}/in').set(this.value)">
                 <button onclick="db.ref('users/${currentUser.uid}/shifts/${d}/isOff').set(${!s.isOff})" class="p-2 text-blue-500"><i class="fa-solid ${s.isOff ? 'fa-toggle-off' : 'fa-toggle-on'}"></i></button>
             </div></div>`;
     }).join('');
 }
+
+function calculate() {
+    const daily = (userData.salary || 15000) / 30;
+    let total = 0, todayB = 0;
+    logs.forEach(l => {
+        if (new Date(l.date).getMonth() === new Date().getMonth()) {
+            if (l.checkIn && !l.isOff) total += daily;
+            total += (l.delivery || 0) * 15;
+            if (l.date === new Date().toISOString().split('T')[0]) todayB = l.delivery || 0;
+        }
+    });
+    document.getElementById('salary-view').innerText = total.toLocaleString(undefined, {minimumFractionDigits: 2});
+    document.getElementById('today-bills').innerText = todayB;
+}
+
+function go(id, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+function moveMonth(v) { viewDate.setMonth(viewDate.getMonth() + v); renderCal(); }
+function confirmLogout() { if(confirm("Logout?")) auth.signOut(); }
 function addDelivery(val) {
     const d = new Date().toISOString().split('T')[0], log = logs.find(l => l.date === d);
     if(log) db.ref(`attendance/${currentUser.uid}/${log.id}`).update({ delivery: (log.delivery || 0) + val });
@@ -200,4 +206,13 @@ function tapOut() {
     const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
     const log = logs.find(l => l.date === d);
     if(log && !log.checkOut) db.ref(`attendance/${currentUser.uid}/${log.id}`).update({ checkOut: t });
+}
+async function handleFileUpload(input) {
+    const file = input.files[0]; if (!file) return;
+    const fd = new FormData(); fd.append("image", file);
+    try {
+        const r = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd });
+        const res = await r.json();
+        if (res.success) await db.ref('users/' + currentUser.uid).update({ photoURL: res.data.url });
+    } catch (e) { alert("Upload Failed"); }
 }
