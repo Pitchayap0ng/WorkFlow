@@ -1,57 +1,58 @@
-@import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700&display=swap');
 
-* {
-    font-family: 'Anuphan', sans-serif;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation; /* กัน Double Tap to Zoom */
+* { 
+    font-family: 'Plus Jakarta Sans', sans-serif; 
+    -webkit-tap-highlight-color: transparent; 
+    user-select: none;
 }
 
-body { background: #000; color: white; margin: 0; user-select: none; }
+body { background-color: #000; overflow: hidden; }
 
 .glass-card { 
+    background: rgba(255, 255, 255, 0.02); 
+    backdrop-filter: blur(25px); 
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.05); 
+    border-radius: 28px; 
+}
+
+.page { display: none; }
+.page.active { display: block; animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+
+@keyframes fadeIn { 
+    from { opacity: 0; transform: translateY(15px); } 
+    to { opacity: 1; transform: translateY(0); } 
+}
+
+.time-pill { 
     background: rgba(255, 255, 255, 0.05); 
     border: 1px solid rgba(255, 255, 255, 0.1); 
-    backdrop-filter: blur(15px); 
-    border-radius: 28px; 
-    transition: transform 0.2s, background 0.2s;
+    border-radius: 14px; 
+    padding: 12px; 
+    color: white; 
+    outline: none; 
+    font-size: 13px;
 }
 
-.glass-card:active { transform: scale(0.98); }
+.time-pill:focus { border-color: #3b82f6; }
 
-/* อนิเมชันเปลี่ยนหน้า */
-.page { 
-    display: none; 
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+.day-node { 
+    aspect-ratio: 1; 
+    border-radius: 16px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-weight: bold; 
+    font-size: 14px; 
+    transition: 0.2s;
 }
 
-.page.active { 
-    display: block; 
-    opacity: 1; 
-    transform: translateY(0); 
-}
+.st-normal { background: #3b82f6 !important; color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
+.st-off { background: #ef4444 !important; color: white; opacity: 0.8; }
+.st-holiday { background: rgba(249, 115, 22, 0.2) !important; border: 1px solid #f97316 !important; color: #f97316 !important; }
 
-.nav-btn { color: #52525b; transition: 0.3s; }
-.nav-btn.active { color: #3b82f6; transform: translateY(-3px); }
+.nav-btn { color: rgba(255, 255, 255, 0.15); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.nav-btn.active { color: #3b82f6; transform: translateY(-5px) scale(1.1); }
 
-/* ปฏิทินสถานะ */
-.day-node { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 14px; font-weight: 600; font-size: 11px; cursor: pointer; }
-.st-normal { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #3b82f6; }
-.st-off { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; }
-.st-holiday { background: rgba(249, 115, 22, 0.1) !important; border: 1px solid rgba(249, 115, 22, 0.4) !important; color: #f97316 !important; }
-
-/* Switch วันหยุดหน้าสัปดาห์ */
-.day-off-toggle {
-    width: 42px; height: 22px; background: rgba(255,255,255,0.1);
-    border-radius: 20px; position: relative; cursor: pointer; transition: 0.3s;
-}
-.day-off-toggle.active { background: #ef4444; }
-.day-off-toggle::before {
-    content: ''; position: absolute; width: 18px; height: 18px;
-    background: white; border-radius: 50%; top: 2px; left: 2px; transition: 0.2s;
-}
-.day-off-toggle.active::before { left: 22px; }
-
-input, select { font-size: 16px !important; } /* iOS ไม่ซูม */
-.time-pill { background: rgba(255, 255, 255, 0.08); padding: 12px; border-radius: 14px; color: white; width: 100%; border: none; outline: none; }
+/* Hide Scrollbar */
+::-webkit-scrollbar { display: none; }
