@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>IMS-Workflow PRO</title>
+    <title>IMS-Workflow</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -15,29 +15,29 @@
 <body class="h-screen overflow-hidden text-sm bg-black text-white">
 
     <div id="auth-ui" class="p-8 pt-24 h-full overflow-y-auto">
-        <div class="max-w-md mx-auto text-center">
-            <h1 class="text-4xl font-bold text-blue-500 tracking-tight">IMS-Workflow</h1>
+        <div class="max-w-md mx-auto">
+            <h1 class="text-4xl font-bold text-blue-500 tracking-tight text-center">IMS-Workflow</h1>
             
-            <div id="auth-login" class="mt-12 space-y-4 text-left">
+            <div id="auth-login" class="mt-12 space-y-4">
                 <input type="text" id="l-id" placeholder="Username / Email" class="w-full bg-[#1c1c1e] p-5 rounded-2xl border border-white/5 outline-none focus:border-blue-500 transition">
                 <input type="password" id="l-pw" placeholder="Password" class="w-full bg-[#1c1c1e] p-5 rounded-2xl border border-white/5 outline-none focus:border-blue-500 transition">
                 <div class="flex items-center gap-2 ml-2">
                     <input type="checkbox" id="remember-me" class="w-4 h-4 accent-blue-500">
                     <label for="remember-me" class="text-[11px] opacity-60">จำชื่อผู้ใช้งาน</label>
                 </div>
-                <button onclick="doLogin()" class="w-full bg-blue-600 py-5 rounded-2xl font-bold text-lg active:scale-95 transition mt-4">LOGIN</button>
+                <button onclick="doLogin()" class="w-full bg-blue-600 py-5 rounded-2xl font-bold text-lg active:scale-95 transition mt-4 shadow-xl">LOGIN</button>
                 <div class="flex justify-between mt-6 px-2 text-[11px] opacity-50 font-bold uppercase">
                     <button onclick="toggleAuth('reg')">สมัครสมาชิก</button>
                     <button onclick="forgotPW()">ลืมรหัสผ่าน?</button>
                 </div>
             </div>
 
-            <div id="auth-reg" class="hidden mt-12 space-y-4 text-left">
-                <input type="text" id="r-user" placeholder="Username (ภาษาอังกฤษเท่านั้น)" class="w-full bg-[#1c1c1e] p-5 rounded-2xl border border-white/5 outline-none focus:border-blue-500 transition">
-                <input type="email" id="r-email" placeholder="Email Address" class="w-full bg-[#1c1c1e] p-5 rounded-2xl border border-white/5 outline-none focus:border-blue-500 transition">
-                <input type="password" id="r-pw" placeholder="Create Password" class="w-full bg-[#1c1c1e] p-5 rounded-2xl border border-white/5 outline-none focus:border-blue-500 transition">
+            <div id="auth-reg" class="hidden mt-12 space-y-4">
+                <input type="text" id="r-user" placeholder="Username (Eng only)" class="w-full bg-[#1c1c1e] p-5 rounded-2xl border border-white/5 outline-none focus:border-blue-500 transition">
+                <input type="email" id="r-email" placeholder="Email" class="w-full bg-[#1c1c1e] p-5 rounded-2xl border border-white/5 outline-none focus:border-blue-500 transition">
+                <input type="password" id="r-pw" placeholder="Password" class="w-full bg-[#1c1c1e] p-5 rounded-2xl border border-white/5 outline-none focus:border-blue-500 transition">
                 <button onclick="doRegister()" class="w-full bg-blue-600 py-5 rounded-2xl font-bold text-lg active:scale-95 transition mt-4">REGISTER</button>
-                <button onclick="toggleAuth('login')" class="w-full text-[11px] opacity-50 mt-6 font-bold uppercase text-center underline">กลับหน้าล็อกอิน</button>
+                <button onclick="toggleAuth('login')" class="w-full text-center text-[11px] opacity-50 mt-6 block underline">มีบัญชีอยู่แล้ว? เข้าสู่ระบบ</button>
             </div>
         </div>
     </div>
@@ -47,7 +47,7 @@
             
             <section id="p-home" class="page active">
                 <div id="remote-banner" class="hidden bg-orange-500/20 border border-orange-500/30 p-3 rounded-2xl mb-6 flex justify-between items-center">
-                    <span class="text-[10px] font-bold text-orange-500 uppercase ml-2"><i class="fa-solid fa-eye mr-2"></i> กำลังคุมเครื่อง: <span id="remote-name"></span></span>
+                    <span class="text-[10px] font-bold text-orange-500 uppercase ml-2"><i class="fa-solid fa-eye mr-2"></i> คุมเครื่อง: <span id="remote-name"></span></span>
                     <button onclick="exitAdminView()" class="bg-orange-500 text-white text-[9px] px-3 py-1 rounded-full font-bold">ออกจากการคุม</button>
                 </div>
 
@@ -60,11 +60,11 @@
                 </div>
 
                 <div class="text-center mb-10">
-                    <p class="text-[10px] opacity-30 font-bold uppercase tracking-widest">เงินเดือนโดยประมาณ</p>
+                    <p class="text-[10px] opacity-30 font-bold uppercase tracking-widest">เงินเดือนรวมเดือนนี้</p>
                     <h1 class="text-5xl font-bold mt-2">฿<span id="salary-view">0.00</span></h1>
                 </div>
 
-                <div id="rider-card" class="hidden glass-card p-6 mb-8">
+                <div id="rider-card" class="hidden glass-card p-6 mb-8 bg-green-500/5">
                     <div class="flex justify-between items-center">
                         <div>
                             <p class="text-[10px] opacity-60 text-green-500 font-bold uppercase">ส่งงานวันนี้</p>
@@ -91,17 +91,17 @@
             </section>
 
             <section id="p-admin" class="page">
-                <h2 class="text-2xl font-bold mb-6 mt-8 text-blue-500 text-center uppercase tracking-widest">Staff Management</h2>
+                <h2 class="text-2xl font-bold mb-6 mt-8 text-blue-500 text-center uppercase tracking-widest">Employee List</h2>
                 <div id="user-list" class="space-y-3"></div>
             </section>
 
             <section id="p-week" class="page">
                 <div class="mt-8 mb-6">
-                    <h2 class="text-2xl font-bold">ตารางงาน</h2>
+                    <h2 class="text-2xl font-bold">ตารางงานพนักงาน</h2>
                     <p id="week-target-name" class="text-[10px] opacity-40 font-bold uppercase"></p>
                 </div>
                 <div id="week-list" class="space-y-3"></div>
-                <button onclick="saveWeekly()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold mt-6 active:scale-95 transition shadow-lg">บันทึกตารางงาน</button>
+                <button onclick="saveWeekly()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold mt-6 active:scale-95 transition">บันทึกตารางงาน</button>
             </section>
 
             <section id="p-cal" class="page">
