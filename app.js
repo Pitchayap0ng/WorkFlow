@@ -1,3 +1,4 @@
+// ✅ 1. Firebase Config
 const firebaseConfig = {
     apiKey: "AIzaSyA11zPbXEFs-sdIHKaxhkprkoGSGP1whfg",
     authDomain: "ims-fei.firebaseapp.com",
@@ -6,301 +7,327 @@ const firebaseConfig = {
     storageBucket: "ims-fei.firebasestorage.app",
     appId: "1:791711191329:web:0a4ba03cd5f11eb71bae60"
 };
-
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth(), db = firebase.database(), storage = firebase.storage();
-emailjs.init("WSvF2N1nopC2xfuZo");
+const auth = firebase.auth(), db = firebase.database();
 
-let currentUser = null, userData = {}, logs = [], viewDate = new Date(), adminTargetId = null;
+// ✅ 2. EmailJS Init
+(function () {
+    emailjs.init("WSvF2N1nopC2xfuZo");
+})();
 
-const DAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
-const MONTHS_TH = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-const HOLIDAYS = { "01-01": "ปีใหม่", "04-13": "สงกรานต์", "12-05": "วันพ่อ", "12-31": "สิ้นปี" };
+let currentUser = null, myInfo = {}, targetInfo = {}, logs = [], viewDate = new Date(), adminTargetId = null;
+let generatedOTP = null;
 
-// --- [ UTILS: NOTIFICATION & LOGS ] ---
-function pushLog(msg, type="info") {
-    const tid = adminTargetId || currentUser.uid;
-    const now = new Date();
-    const logData = {
-        msg, type,
-        time: now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
-        date: now.toLocaleDateString('th-TH'),
-        ts: Date.now()
-    };
-    db.ref(`logs/${tid}`).push(logData);
-    
-    Swal.fire({
-        title: msg, icon: type, timer: 1500, showConfirmButton: false,
-        toast: true, position: 'top-end', background: '#1c1c1e', color: '#fff'
-    });
-}
+// วันสำคัญ
+const HOLIDAYS = { "01-01": "ปีใหม่", "04-13": "สงกรานต์", "04-14": "สงกรานต์", "04-15": "สงกรานต์", "05-01": "แรงงาน", "07-28": "วันเฉลิมฯ", "08-12": "วันแม่", "10-13": "วัน ร.9", "12-05": "วันพ่อ", "12-31": "สิ้นปี" };
 
-// --- [ AUTH LOGIC ] ---
-async function doLogin() {
-    const id = document.getElementById('l-id').value.trim(), pw = document.getElementById('l-pw').value;
-    if(!id || !pw) return;
-    try {
-        let email = id;
-        if (!id.includes('@')) {
-            const s = await db.ref('usernames/' + id.toLowerCase()).once('value');
-            if (!s.exists()) throw new Error("ไม่พบ Username");
-            email = s.val().email;
-        }
-        await auth.signInWithEmailAndPassword(email, pw);
-        pushLog("เข้าสู่ระบบสำเร็จ", "success");
-    } catch (e) { pushLog(e.message, "error"); }
-}
-
-function toggleAuth(isReg) {
-    document.getElementById('login-box').classList.toggle('hidden', isReg);
-    document.getElementById('reg-box').classList.toggle('hidden', !isReg);
-}
-
-// --- [ PROFILE & PHOTO UPLOAD ] ---
-function triggerUpload() { document.getElementById('u-file').click(); }
-
-async function uploadPhoto(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const tid = adminTargetId || currentUser.uid;
-    const ref = storage.ref(`profiles/${tid}`);
-    
-    Swal.showLoading();
-    try {
-        await ref.put(file);
-        const url = await ref.getDownloadURL();
-        await db.ref(`users/${tid}`).update({ photoURL: url });
-        pushLog("อัปโหลดรูปโปรไฟล์ใหม่แล้ว", "success");
-    } catch (e) { pushLog("อัปโหลดไม่สำเร็จ", "error"); }
-    Swal.close();
-}
-
-async function openEditProfile() {
-    const tid = adminTargetId || currentUser.uid;
-    const s = await db.ref(`users/${tid}`).once('value');
-    const d = s.val() || {};
-
-    const { value: res } = await Swal.fire({
-        title: 'แก้ไขโปรไฟล์', background: '#1c1c1e', color: '#fff',
-        html: `
-            <div class="text-left space-y-3 px-2 overflow-y-auto max-h-[60vh]">
-                <label class="text-[10px] opacity-40 uppercase font-bold">Display Name</label>
-                <input id="e-name" class="time-pill w-full mb-3" value="${d.displayName || ''}">
-                <label class="text-[10px] opacity-40 uppercase font-bold">Phone Number</label>
-                <input id="e-phone" class="time-pill w-full mb-3" value="${d.phone || ''}">
-                ${userData.isAdmin ? `
-                    <hr class="opacity-10 my-4">
-                    <label class="text-[10px] text-blue-500 font-bold">SALARY (ADMIN ONLY)</label>
-                    <input id="e-salary" type="number" class="time-pill w-full mb-3" value="${d.salary || 15000}">
-                    <label class="text-[10px] text-blue-500 font-bold">ROLE</label>
-                    <select id="e-role" class="time-pill w-full mb-3">
-                        <option value="false" ${!d.isAdmin?'selected':''}>พนักงาน (Staff)</option>
-                        <option value="true" ${d.isAdmin?'selected':''}>ผู้ดูแล (Admin)</option>
-                    </select>
-                    <label class="text-[10px] text-blue-500 font-bold">JOB TYPE</label>
-                    <select id="e-job" class="time-pill w-full">
-                        <option value="staff" ${d.jobType==='staff'?'selected':''}>งานออฟฟิศ</option>
-                        <option value="rider" ${d.jobType==='rider'?'selected':''}>Rider (ส่งบิล)</option>
-                    </select>
-                ` : ''}
-            </div>`,
-        showCancelButton: true,
-        preConfirm: () => {
-            const up = { displayName: document.getElementById('e-name').value, phone: document.getElementById('e-phone').value };
-            if(userData.isAdmin) {
-                up.salary = parseFloat(document.getElementById('e-salary').value);
-                up.isAdmin = document.getElementById('e-role').value === "true";
-                up.jobType = document.getElementById('e-job').value;
-            }
-            return up;
-        }
-    });
-    if (res) {
-        await db.ref(`users/${tid}`).update(res);
-        pushLog("อัปเดตข้อมูลพนักงานแล้ว", "success");
-    }
-}
-
-// --- [ ATTENDANCE CORE ] ---
-function tapIn() {
-    const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
-    const tid = adminTargetId || currentUser.uid;
-    if(logs.find(l => l.date === d)) return pushLog("วันนี้เช็คอินแล้ว", "warning");
-    db.ref(`attendance/${tid}`).push({ date: d, checkIn: t, checkOut: '', isOff: false, delivery: 0 });
-    pushLog(`เช็คอินเข้างาน: ${t}`, "success");
-}
-
-function tapOut() {
-    const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
-    const tid = adminTargetId || currentUser.uid;
-    const log = logs.find(l => l.date === d);
-    if(!log || log.checkOut) return pushLog("ไม่พบข้อมูลเช็คอิน", "error");
-    db.ref(`attendance/${tid}/${log.id}`).update({ checkOut: t });
-    pushLog(`เช็คเอาท์ออกงาน: ${t}`, "success");
-}
-
-async function addDelivery(v) {
-    const tid = adminTargetId || currentUser.uid;
-    const d = new Date().toISOString().split('T')[0];
-    let log = logs.find(l => l.date === d);
-    if(!log) {
-        await db.ref(`attendance/${tid}`).push({ date: d, checkIn: '--:--', delivery: Math.max(0, v), isOff: false });
+// --- [ AUTH SYSTEM ] ---
+auth.onAuthStateChanged(user => {
+    currentUser = user;
+    if (user) {
+        db.ref(`users/${user.uid}`).on('value', s => {
+            myInfo = s.val() || {};
+            document.getElementById('nav-admin').classList.toggle('hidden', myInfo.role !== 'admin');
+            if (!adminTargetId) initApp();
+        });
+        document.getElementById('auth-ui').classList.add('hidden');
+        document.getElementById('app-ui').classList.remove('hidden');
     } else {
-        await db.ref(`attendance/${tid}/${log.id}`).update({ delivery: Math.max(0, (log.delivery || 0) + v) });
+        document.getElementById('auth-ui').classList.remove('hidden');
+        document.getElementById('app-ui').classList.add('hidden');
     }
-}
-
-// --- [ ADMIN VIEW LOGIC ] ---
-function loadUserList() {
-    db.ref('users').on('value', s => {
-        const users = s.val();
-        document.getElementById('user-list').innerHTML = Object.keys(users).map(id => `
-            <div onclick="enterAdminView('${id}', '${users[id].displayName || 'User'}')" class="glass-card p-4 flex justify-between items-center active:scale-95 transition">
-                <div class="flex items-center gap-4">
-                    <img src="${users[id].photoURL || ''}" class="w-12 h-12 rounded-full object-cover bg-zinc-800">
-                    <div class="text-left">
-                        <p class="font-bold text-sm">${users[id].displayName || users[id].username}</p>
-                        <p class="text-[9px] opacity-40 uppercase tracking-widest">${users[id].jobType} | ${users[id].isAdmin ? 'Admin' : 'Staff'}</p>
-                    </div>
-                </div>
-                <i class="fa-solid fa-chevron-right opacity-10"></i>
-            </div>
-        `).join('');
-    });
-}
-
-function enterAdminView(id, name) {
-    adminTargetId = id;
-    document.getElementById('remote-banner').classList.remove('hidden');
-    document.getElementById('remote-name').innerText = name;
-    initApp(); go('p-home');
-    pushLog(`ควบคุมเครื่อง: ${name}`, "info");
-}
-
-function exitAdminView() {
-    adminTargetId = null;
-    document.getElementById('remote-banner').classList.add('hidden');
-    initApp();
-    pushLog("กลับสู่โหมดปกติ");
-}
-
-// --- [ RENDER & CALCULATION ] ---
-auth.onAuthStateChanged(u => {
-    currentUser = u;
-    document.getElementById('auth-ui').classList.toggle('hidden', !!u);
-    document.getElementById('app-ui').classList.toggle('hidden', !u);
-    if (u) initApp();
 });
 
+async function doLogin() {
+    let id = document.getElementById('l-id').value.toLowerCase().trim();
+    const pw = document.getElementById('l-pw').value;
+    if (!id || !pw) return pushLog("กรุณากรอกข้อมูลให้ครบ", "warning");
+
+    if (!id.includes('@')) {
+        const s = await db.ref('usernames/' + id).once('value');
+        if (s.exists()) id = s.val().email;
+        else return pushLog("ไม่พบชื่อผู้ใช้นี้", "error");
+    }
+    auth.signInWithEmailAndPassword(id, pw).catch(e => pushLog("รหัสผ่านไม่ถูกต้อง", "error"));
+}
+
+async function sendOTP() {
+    const email = document.getElementById('r-email').value.trim();
+    const name = document.getElementById('r-name').value.trim();
+    const user = document.getElementById('r-user').value.toLowerCase().trim();
+
+    if (!email || !name || !user) return pushLog("กรุณากรอกข้อมูลให้ครบ", "warning");
+
+    const checkUser = await db.ref(`usernames/${user}`).once('value');
+    if (checkUser.exists()) return pushLog("Username นี้ถูกใช้งานแล้ว", "error");
+
+    generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+    pushLog("กำลังส่ง OTP...", "info");
+
+    const templateParams = { to_name: name, to_email: email, passcode: generatedOTP, time: "15" };
+
+    emailjs.send('IMS-work', 'template_34sz4uc', templateParams)
+        .then(() => {
+            pushLog("ส่ง OTP สำเร็จ!");
+            document.getElementById('otp-section').classList.remove('hidden');
+            document.getElementById('btn-send-otp').classList.add('hidden');
+        }).catch(err => pushLog("ส่งไม่สำเร็จ ตรวจสอบ EmailJS ID", "error"));
+}
+
+async function doRegister() {
+    const inputOTP = document.getElementById('r-otp').value.trim();
+    if (inputOTP !== generatedOTP) return pushLog("รหัส OTP ไม่ถูกต้อง", "error");
+
+    const name = document.getElementById('r-name').value.trim();
+    const user = document.getElementById('r-user').value.toLowerCase().trim();
+    const email = document.getElementById('r-email').value.trim();
+    const phone = document.getElementById('r-phone').value.trim();
+    const job = document.getElementById('r-job').value;
+    const pw = document.getElementById('r-pw').value;
+
+    if (pw.length < 6) return pushLog("รหัสผ่านต้อง 6 ตัวขึ้นไป", "warning");
+
+    auth.createUserWithEmailAndPassword(email, pw).then(async r => {
+        const userData = {
+            displayName: name, username: user, email: email, phone: phone,
+            jobType: job, role: 'user', salary: 15000, billRate: 40,
+            photoURL: 'https://cdn-icons-png.flaticon.com/512/149/149071.png'
+        };
+        await db.ref(`users/${r.user.uid}`).set(userData);
+        await db.ref(`usernames/${user}`).set({ email: email, uid: r.user.uid });
+        pushLog("สมัครสมาชิกสำเร็จ!");
+        generatedOTP = null;
+    }).catch(e => pushLog(e.message, "error"));
+}
+
+async function forgotPw() {
+    const { value: email } = await Swal.fire({
+        title: 'ลืมรหัสผ่าน?',
+        input: 'email',
+        inputLabel: 'กรุณากรอกอีเมลที่ใช้สมัคร',
+        inputPlaceholder: 'email@example.com',
+        background: '#1c1c1e', color: '#fff',
+        confirmButtonText: 'ส่งลิงก์รีเซ็ต',
+        showCancelButton: true
+    });
+    if (email) {
+        auth.sendPasswordResetEmail(email)
+            .then(() => pushLog("ส่งลิงก์ไปที่อีเมลแล้ว!"))
+            .catch(e => pushLog("ไม่พบอีเมลนี้ในระบบ", "error"));
+    }
+}
+
+// --- [ MAIN APP LOGIC ] ---
 function initApp() {
     const tid = adminTargetId || currentUser.uid;
-    
     db.ref(`users/${tid}`).on('value', s => {
-        const data = s.val() || {};
-        if(!adminTargetId) userData = data;
-        document.getElementById('u-display').innerText = data.displayName || data.username;
-        document.getElementById('u-photo').src = data.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-        document.getElementById('nav-admin').classList.toggle('hidden', !userData.isAdmin);
-        document.getElementById('rider-card').classList.toggle('hidden', data.jobType !== 'rider');
-        renderWeekly(data);
-        calculateSalary(data);
-        if(userData.isAdmin) loadUserList();
+        targetInfo = s.val() || {};
+        document.getElementById('u-display').innerText = targetInfo.displayName || 'User';
+        document.getElementById('u-photo').src = targetInfo.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        document.getElementById('rider-card').classList.toggle('hidden', targetInfo.jobType !== 'delivery');
+        renderWeekly(targetInfo);
+        calculateSalary();
     });
-
     db.ref(`attendance/${tid}`).on('value', s => {
         const d = s.val();
         logs = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
-        const todayLog = logs.find(l => l.date === new Date().toISOString().split('T')[0]);
-        document.getElementById('today-bills').innerText = todayLog ? (todayLog.delivery || 0) : 0;
         renderCal();
-    });
-
-    db.ref(`logs/${tid}`).limitToLast(10).on('value', s => {
-        const list = s.val();
-        document.getElementById('log-list').innerHTML = list ? Object.values(list).reverse().map(l => `
-            <div class="flex justify-between items-center text-[11px] opacity-70 border-b border-white/5 pb-2">
-                <div class="flex gap-2">
-                    <span class="text-blue-500">•</span>
-                    <span>${l.msg}</span>
-                </div>
-                <span class="text-[9px] opacity-40">${l.time}</span>
-            </div>
-        `).join('') : '<p class="text-center opacity-20 py-4">ไม่มีประวัติกิจกรรม</p>';
+        calculateSalary();
     });
 }
 
 function renderCal() {
     const y = viewDate.getFullYear(), m = viewDate.getMonth();
-    document.getElementById('mon-view').innerText = `${MONTHS_TH[m]} ${y + 543}`;
+    const names = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+    document.getElementById('mon-view').innerText = `${names[m]} ${y + 543}`;
     const total = new Date(y, m + 1, 0).getDate(), start = new Date(y, m, 1).getDay();
     const grid = document.getElementById('cal-grid'); grid.innerHTML = '';
-    
     for (let i = 0; i < start; i++) grid.innerHTML += '<div></div>';
     for (let d = 1; d <= total; d++) {
-        const date = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        const log = logs.find(l => l.date === date);
-        const hName = HOLIDAYS[`${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`];
-        let cls = log ? (log.isOff ? 'st-off' : 'st-normal') : (hName ? 'st-holiday' : 'bg-white/5');
-        grid.innerHTML += `<div onclick="editDay('${date}')" class="day-node ${cls}">${d}</div>`;
+        const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const holidayKey = `${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const log = logs.find(l => l.date === dateStr);
+        let cls = log ? (log.isOff ? 'st-off' : 'st-normal') : 'bg-white/5 opacity-40';
+        grid.innerHTML += `<div onclick="editCalendarEntry('${dateStr}')" class="day-node ${cls} relative flex flex-col items-center justify-center h-12 text-sm cursor-pointer">${d}${HOLIDAYS[holidayKey] ? `<span class="absolute bottom-1 text-[5px] text-orange-500 font-bold">${HOLIDAYS[holidayKey]}</span>` : ''}</div>`;
     }
 }
 
-async function editDay(date) {
-    const log = logs.find(l => l.date === date) || { checkIn: '', checkOut: '', isOff: false };
-    const { value: res } = await Swal.fire({
-        title: 'แก้ไขข้อมูลวัน: ' + date, background: '#1c1c1e', color: '#fff',
-        html: `
-            <div class="space-y-4">
-                <label class="flex justify-between items-center bg-white/5 p-4 rounded-2xl">
-                    <span class="text-sm font-bold uppercase">ตั้งเป็นวันหยุด</span>
-                    <input type="checkbox" id="e-off" ${log.isOff ? 'checked' : ''} class="w-6 h-6">
-                </label>
-                <div class="grid grid-cols-2 gap-2">
-                    <input type="time" id="e-in" class="time-pill" value="${log.checkIn}">
-                    <input type="time" id="e-out" class="time-pill" value="${log.checkOut}">
-                </div>
-            </div>`,
-        showCancelButton: true,
-        preConfirm: () => ({ isOff: document.getElementById('e-off').checked, checkIn: document.getElementById('e-in').value, checkOut: document.getElementById('e-out').value })
+function calculateSalary() {
+    const u = targetInfo; const base = (u.salary || 0) / 30; const bRate = u.billRate || 40;
+    const m = viewDate.getMonth(), y = viewDate.getFullYear();
+    let days = 0, bills = 0;
+    logs.forEach(l => {
+        const ld = new Date(l.date);
+        if (ld.getMonth() === m && ld.getFullYear() === y) {
+            if (!l.isOff && l.checkIn) days++;
+            bills += (l.delivery || 0);
+        }
     });
-    if(res) {
-        const tid = adminTargetId || currentUser.uid;
-        if(log.id) await db.ref(`attendance/${tid}/${log.id}`).update(res);
-        else await db.ref(`attendance/${tid}`).push({ ...res, date });
-        pushLog("ปรับปรุงบันทึกเวลาแล้ว");
-    }
+    const total = (days * base) + (bills * bRate);
+    document.getElementById('salary-view').innerText = total.toLocaleString(undefined, { minimumFractionDigits: 2 });
+    document.getElementById('salary-detail').innerText = `เข้างาน ${days} วัน | จัดส่ง ${bills} บิล`;
 }
 
-function calculateSalary(data) {
-    const dailyRate = (data.salary || 15000) / 30;
-    const currentMonth = new Date().getMonth();
-    const workDays = logs.filter(l => new Date(l.date).getMonth() === currentMonth && !l.isOff && l.checkIn !== '--:--').length;
-    document.getElementById('salary-view').innerText = (workDays * dailyRate).toLocaleString(undefined, {minimumFractionDigits: 2});
-}
-
-function renderWeekly(data) {
-    const list = document.getElementById('week-list');
-    list.innerHTML = DAYS.map(d => {
-        const s = (data.shifts && data.shifts[d]) ? data.shifts[d] : { in: '08:30', out: '17:30', isOff: false };
-        return `
-            <div class="glass-card p-4 flex justify-between items-center ${s.isOff ? 'opacity-30' : 'slide-in'}">
-                <span class="font-bold text-xs uppercase">${d}</span>
-                <div class="flex gap-2">
-                    <input type="time" class="time-pill py-2 text-[10px]" value="${s.in}" onchange="setShift('${d}','in',this.value)">
-                    <input type="time" class="time-pill py-2 text-[10px]" value="${s.out}" onchange="setShift('${d}','out',this.value)">
-                </div>
-            </div>`;
-    }).join('');
-}
-
-function setShift(d, k, v) { db.ref(`users/${adminTargetId || currentUser.uid}/shifts/${d}/${k}`).set(v); }
+// ✅ UI Helpers
 function go(id, btn) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(id).classList.add('active');
-    if(btn) {
+    if (btn) {
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
     }
+    if (id === 'p-admin') loadUserList();
 }
-function moveMonth(v) { viewDate.setMonth(viewDate.getMonth() + v); renderCal(); }
+
+function pushLog(m, t = "success") {
+    Swal.fire({ title: m, icon: t, background: '#1c1c1e', color: '#fff', timer: 1500, showConfirmButton: false, toast: true, position: 'top' });
+}
+
+function toggleAuth(mode) {
+    document.getElementById('login-form').classList.toggle('hidden', mode === 'reg');
+    document.getElementById('reg-form').classList.toggle('hidden', mode === 'login');
+}
+
 function doLogout() { auth.signOut(); }
+
+function confirmAction(t, cb) {
+    Swal.fire({ title: 'ยืนยัน?', text: t, icon: 'question', showCancelButton: true, background: '#1c1c1e', color: '#fff' }).then(r => { if (r.isConfirmed) cb(); });
+}
+
+// --- [ ตอกบัตร ] ---
+async function tapIn() {
+    const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
+    if (logs.find(l => l.date === d)) return pushLog("ลงเวลาแล้ว", "warning");
+    await db.ref(`attendance/${adminTargetId || currentUser.uid}`).push({ date: d, checkIn: t, checkOut: '', isOff: false, delivery: 0 });
+}
+
+async function tapOut() {
+    const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
+    const log = logs.find(l => l.date === d);
+    if (!log) return pushLog("ยังไม่ตอกบัตรเข้า", "error");
+    await db.ref(`attendance/${adminTargetId || currentUser.uid}/${log.id}`).update({ checkOut: t });
+}
+
+async function addDelivery(v) {
+    const d = new Date().toISOString().split('T')[0];
+    const log = logs.find(l => l.date === d);
+    if (log) await db.ref(`attendance/${adminTargetId || currentUser.uid}/${log.id}`).update({ delivery: Math.max(0, (log.delivery || 0) + v) });
+    else pushLog("ตอกบัตรเข้างานก่อน", "warning");
+}
+
+function moveMonth(v) { viewDate.setMonth(viewDate.getMonth() + v); renderCal(); calculateSalary(); }
+
+// --- [ ADMIN FUNCTIONS ] ---
+function loadUserList() {
+    db.ref('users').on('value', s => {
+        const users = s.val();
+        if (!users) return;
+        document.getElementById('user-list').innerHTML = Object.keys(users).map(id => `
+            <div onclick="enterAdminView('${id}', '${users[id].displayName}')" class="glass-card p-4 flex justify-between items-center cursor-pointer">
+                <div class="flex items-center gap-3"><img src="${users[id].photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="w-10 h-10 rounded-full object-cover">
+                <div><p class="font-bold text-sm">${users[id].displayName || 'User'}</p><p class="text-[8px] opacity-40 uppercase">${users[id].jobType || 'staff'} • ${users[id].role || 'user'}</p></div></div>
+                <i class="fa-solid fa-chevron-right opacity-20"></i></div>`).join('');
+    });
+}
+
+function enterAdminView(id, name) { adminTargetId = id; document.getElementById('remote-banner').classList.remove('hidden'); document.getElementById('remote-name').innerText = name; initApp(); go('p-home'); }
+function exitAdminView() { adminTargetId = null; document.getElementById('remote-banner').classList.add('hidden'); initApp(); }
+
+function renderWeekly(data) {
+    const names = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+    const weekContainer = document.getElementById('week-list');
+    if (!weekContainer) return;
+    weekContainer.innerHTML = names.map(d => {
+        const s = (data.shifts && data.shifts[d]) ? data.shifts[d] : { in: '08:30', out: '17:30', isOff: false };
+        return `<div class="glass-card p-4 flex justify-between items-center ${s.isOff ? 'opacity-30' : ''}">
+                <div class="flex items-center gap-3"><input type="checkbox" ${!s.isOff ? 'checked' : ''} onchange="updateShift('${d}', 'isOff', !this.checked)" class="w-5 h-5 accent-blue-500"><span class="font-bold text-xs">${d}</span></div>
+                <div class="flex gap-2"><input type="time" class="time-pill py-2 px-3 text-[10px]" value="${s.in}" onchange="updateShift('${d}', 'in', this.value)"><input type="time" class="time-pill py-2 px-3 text-[10px]" value="${s.out}" onchange="updateShift('${d}', 'out', this.value)"></div></div>`;
+    }).join('');
+}
+function updateShift(d, k, v) { db.ref(`users/${adminTargetId || currentUser.uid}/shifts/${d}/${k}`).set(v); }
+
+// ✅ [ EDIT PROFILE & IMAGE ]
+async function openEditProfile() {
+    const tid = adminTargetId || currentUser.uid;
+    const s = await db.ref(`users/${tid}`).once('value');
+    const d = s.val() || {};
+    const isAdmin = myInfo.role === 'admin';
+    const isMe = tid === currentUser.uid;
+
+    const { value: res } = await Swal.fire({
+        title: 'แก้ไขข้อมูลบัญชี',
+        background: '#1c1c1e', color: '#fff',
+        html: `
+        <div class="text-left space-y-4 max-h-[65vh] overflow-y-auto px-1 scrollbar-hide">
+            <div class="flex flex-col items-center gap-2 border-b border-white/10 pb-4">
+                <img id="temp-img" src="${d.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="w-16 h-16 rounded-full object-cover border-2 border-blue-500 bg-zinc-900 shadow-xl">
+                <input type="file" id="file-input" accept="image/*" class="hidden" onchange="previewImage(this)">
+                <button onclick="document.getElementById('file-input').click()" class="text-[9px] bg-blue-500/20 text-blue-400 px-4 py-1.5 rounded-full font-bold uppercase tracking-wider">Change Photo</button>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div><label class="text-[9px] opacity-40 uppercase font-bold">ชื่อพนักงาน</label><input id="e-name" class="time-pill w-full p-3 mt-1 bg-zinc-800" value="${d.displayName || ''}"></div>
+                <div><label class="text-[9px] opacity-40 uppercase font-bold">เบอร์โทรศัพท์</label><input id="e-phone" class="time-pill w-full p-3 mt-1 bg-zinc-800" value="${d.phone || ''}"></div>
+            </div>
+            <div class="bg-blue-500/5 p-4 rounded-3xl space-y-3 border border-blue-500/10">
+                <p class="text-blue-400 text-[10px] font-bold uppercase tracking-tighter italic">บัญชีผู้ใช้</p>
+                <div><label class="text-[9px] opacity-40 uppercase font-bold">Username</label><input id="e-user" class="time-pill w-full p-3 mt-1 bg-zinc-800" value="${d.username || ''}"></div>
+                <div><label class="text-[9px] opacity-40 uppercase font-bold">Email</label><input id="e-email" class="time-pill w-full p-3 mt-1 bg-zinc-800" value="${d.email || ''}"></div>
+                ${isMe ? `
+                <div class="pt-2"><label class="text-[9px] text-orange-400 uppercase font-bold italic">รหัสผ่านใหม่</label><input id="e-pw" type="password" class="time-pill w-full p-3 mt-1 bg-zinc-800" placeholder="******"></div>
+                <div class="pt-2 border-t border-white/5 mt-4"><label class="text-[10px] text-red-500 uppercase font-bold italic underline">ยืนยันรหัสปัจจุบัน</label><input id="curr-pw" type="password" class="time-pill w-full p-3 mt-1 bg-zinc-900 border border-red-500/30" placeholder="รหัสปัจจุบัน"></div>` : ''}
+            </div>
+            ${isAdmin ? `
+            <div class="border-t border-white/10 pt-4 space-y-3">
+                <p class="text-orange-500 text-[10px] font-bold uppercase italic">Admin Settings</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="text-[9px] opacity-40 uppercase font-bold">เงินเดือน</label><input id="e-sal" type="number" class="time-pill w-full p-3 mt-1 bg-zinc-800" value="${d.salary || 15000}"></div>
+                    <div><label class="text-[9px] opacity-40 uppercase font-bold">ค่าบิล</label><input id="e-bill" type="number" class="time-pill w-full p-3 mt-1 bg-zinc-800" value="${d.billRate || 40}"></div>
+                </div>
+            </div>` : ''}
+        </div>`,
+        showCancelButton: true, confirmButtonText: 'บันทึกข้อมูล',
+        preConfirm: async () => {
+            const up = { displayName: document.getElementById('e-name').value, phone: document.getElementById('e-phone').value, username: document.getElementById('e-user').value.toLowerCase().trim(), email: document.getElementById('e-email').value.trim() };
+            const curPw = document.getElementById('curr-pw')?.value, newPw = document.getElementById('e-pw')?.value, tempImg = document.getElementById('temp-img').src;
+            if (tempImg.startsWith('data:image')) up.photoURL = tempImg;
+            if (isAdmin) { up.salary = parseFloat(document.getElementById('e-sal').value); up.billRate = parseFloat(document.getElementById('e-bill').value); }
+            try {
+                if (isMe && (up.username !== d.username || up.email !== d.email || (newPw && newPw.length > 0))) {
+                    if (!curPw) throw new Error("กรุณากรอกรหัสผ่านปัจจุบัน");
+                    const cred = firebase.auth.EmailAuthProvider.credential(currentUser.email, curPw);
+                    await currentUser.reauthenticateWithCredential(cred);
+                    if (up.email !== currentUser.email) await currentUser.updateEmail(up.email);
+                    if (newPw) await currentUser.updatePassword(newPw);
+                }
+                if (up.username !== d.username) {
+                    await db.ref(`usernames/${d.username}`).remove();
+                    await db.ref(`usernames/${up.username}`).set({ email: up.email, uid: tid });
+                }
+                return up;
+            } catch (err) { Swal.showValidationMessage(err.message); }
+        }
+    });
+    if (res) { await db.ref(`users/${tid}`).update(res); pushLog("บันทึกสำเร็จ"); }
+}
+
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => { document.getElementById('temp-img').src = e.target.result; };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+async function editCalendarEntry(dateStr) {
+    const tid = adminTargetId || currentUser.uid;
+    const log = logs.find(l => l.date === dateStr);
+    const { value: res } = await Swal.fire({
+        title: dateStr, background: '#1c1c1e', color: '#fff',
+        html: `<input id="sw-in" type="time" class="time-pill w-full p-4 mb-2 bg-zinc-800" value="${log?.checkIn || '08:30'}"><input id="sw-out" type="time" class="time-pill w-full p-4 mb-2 bg-zinc-800" value="${log?.checkOut || '17:30'}"><input id="sw-bill" type="number" class="time-pill w-full p-4 bg-zinc-800" placeholder="บิล" value="${log?.delivery || 0}">`,
+        showDenyButton: true, showCancelButton: true, confirmButtonText: 'บันทึก', denyButtonText: 'ลบ'
+    });
+    if (res) {
+        const data = { date: dateStr, checkIn: document.getElementById('sw-in').value, checkOut: document.getElementById('sw-out').value, delivery: parseInt(document.getElementById('sw-bill').value) || 0, isOff: false };
+        if (log?.id) await db.ref(`attendance/${tid}/${log.id}`).update(data); else await db.ref(`attendance/${tid}`).push(data);
+    } else if (res === false && log?.id) { await db.ref(`attendance/${tid}/${log.id}`).remove(); }
+}

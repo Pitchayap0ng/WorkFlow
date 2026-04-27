@@ -1,138 +1,210 @@
 <!DOCTYPE html>
 <html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>IMS-Workflow SUPREME</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body class="bg-black text-white h-screen overflow-hidden">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport"
+            content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+        <title>IMS-Workflow SECURE (Full)</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script
+            src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+        <script
+            src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+        <script
+            src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+        <script type="text/javascript"
+            src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+        <link rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body class="bg-black text-white h-screen overflow-hidden font-sans">
 
-    <div id="auth-ui" class="p-8 pt-20 h-full overflow-y-auto">
-        <div class="max-w-md mx-auto slide-up">
-            <h1 class="text-4xl font-bold text-blue-500 text-center mb-12 tracking-tighter">IMS-Workflow</h1>
-            
-            <div id="login-box" class="space-y-4">
-                <input type="text" id="l-id" placeholder="Username / Email" class="time-pill w-full p-5">
-                <input type="password" id="l-pw" placeholder="Password" class="time-pill w-full p-5">
-                <button onclick="doLogin()" class="btn-primary w-full py-5 text-lg">เข้าสู่ระบบ</button>
-                <div class="flex justify-between px-2 text-[10px] font-bold uppercase opacity-40">
-                    <button onclick="toggleAuth(true)">สมัครสมาชิก</button>
-                    <button onclick="forgotPW()">ลืมรหัสผ่าน?</button>
+        <div id="auth-ui" class="p-8 pt-12 h-full overflow-y-auto">
+            <div class="max-w-md mx-auto">
+                <h1
+                    class="text-4xl font-bold text-blue-500 text-center mb-10 italic uppercase">IMS-WORKFLOW</h1>
+
+                <div id="login-form" class="space-y-4">
+                    <input type="text" id="l-id"
+                        placeholder="อีเมล หรือ ชื่อผู้ใช้"
+                        class="time-pill w-full p-5 bg-zinc-900 border-none outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="password" id="l-pw" placeholder="รหัสผ่าน"
+                        class="time-pill w-full p-5 bg-zinc-900 border-none outline-none focus:ring-2 focus:ring-blue-500">
+                    <div
+                        class="flex justify-between items-center px-2 text-[10px] opacity-60 font-bold uppercase">
+                        <label class="flex items-center gap-2"><input
+                                type="checkbox" id="l-rem"
+                                class="accent-blue-500"> จดจำฉัน</label>
+                        <button onclick="forgotPw()">ลืมรหัสผ่าน?</button>
+                    </div>
+                    <button onclick="doLogin()"
+                        class="btn-primary w-full py-5 text-lg">เข้าสู่ระบบ</button>
+                    <div
+                        class="text-center text-[11px] opacity-50 mt-4 uppercase">ยังไม่มีบัญชี?
+                        <button onclick="toggleAuth('reg')"
+                            class="text-blue-500 font-bold">สมัครสมาชิก</button></div>
                 </div>
-            </div>
 
-            <div id="reg-box" class="hidden space-y-4">
-                <input type="text" id="r-name" placeholder="ชื่อ-นามสกุล" class="time-pill w-full p-5">
-                <input type="text" id="r-user" placeholder="Username" class="time-pill w-full p-5">
-                <input type="email" id="r-email" placeholder="อีเมล" class="time-pill w-full p-5">
-                <input type="tel" id="r-phone" placeholder="เบอร์โทรศัพท์" class="time-pill w-full p-5">
-                <input type="password" id="r-pw" placeholder="รหัสผ่าน (6 ตัวขึ้นไป)" class="time-pill w-full p-5">
-                <button onclick="sendOTP()" class="btn-primary w-full py-5 text-lg">ส่ง OTP และสมัคร</button>
-                <button onclick="toggleAuth(false)" class="w-full text-center text-xs opacity-40 underline mt-4">กลับไปหน้าล็อกอิน</button>
+                <div id="reg-form" class="hidden space-y-4">
+                    <input type="text" id="r-name" placeholder="Name"
+                        class="time-pill w-full p-4 bg-zinc-900">
+                    <input type="text" id="r-user"
+                        placeholder="Username (อังกฤษ)"
+                        class="time-pill w-full p-4 bg-zinc-900">
+                    <input type="email" id="r-email" placeholder="Email"
+                        class="time-pill w-full p-4 bg-zinc-900">
+                    <input type="tel" id="r-phone" placeholder="เบอร์โทรศัพท์"
+                        class="time-pill w-full p-4 bg-zinc-900">
+
+                    <select id="r-job"
+                        class="time-pill w-full p-4 bg-zinc-900 text-sm opacity-60">
+                        <option value="staff">พนักงานทั่วไป (Staff)</option>
+                        <option value="delivery">พนักงานส่งของ
+                            (Delivery)</option>
+                    </select>
+
+                    <input type="password" id="r-pw"
+                        placeholder="รหัสผ่าน (6 ตัวขึ้นไป)"
+                        class="time-pill w-full p-4 bg-zinc-900">
+
+                    <div id="reg-action-area">
+                        <button id="btn-send-otp" onclick="sendOTP()"
+                            class="btn-primary w-full py-4 bg-blue-600">รับรหัส
+                            OTP ผ่าน Email</button>
+                    </div>
+
+                    <div id="otp-section"
+                        class="hidden mt-4 pt-4 border-t border-white/10">
+                        <p
+                            class="text-[10px] text-orange-400 font-bold uppercase mb-2 text-center italic">
+                            กรุณากรอกรหัส 6 หลักที่ได้รับในอีเมล
+                        </p>
+                        <div class="space-y-3">
+                            <input type="text" id="r-otp"
+                                placeholder="กรอกรหัส OTP"
+                                class="w-full p-3 bg-zinc-900 border border-blue-500/30 rounded-2xl text-center tracking-[1em] font-bold outline-none focus:ring-1 focus:ring-blue-500">
+
+                            <button onclick="doRegister()"
+                                class="btn-primary w-full py-4 text-sm shadow-lg shadow-green-500/20 bg-green-600 hover:bg-green-500">
+                                ยืนยันรหัสและลงทะเบียน
+                            </button>
+                        </div>
+                    </div>
+
+                    <button onclick="toggleAuth('login')"
+                        class="w-full text-[10px] opacity-40 font-bold uppercase mt-2">ยกเลิก</button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div id="app-ui" class="hidden h-full flex flex-col">
-        <main class="flex-1 px-5 pt-12 overflow-y-auto pb-32">
-            
-            <section id="p-home" class="page active">
-                <div id="remote-banner" class="hidden bg-orange-600/20 border border-orange-500/40 p-4 rounded-2xl mb-6 flex justify-between items-center bounce-in">
-                    <div>
-                        <p class="text-[9px] font-bold text-orange-500 uppercase tracking-widest">Remote Access</p>
-                        <p class="font-bold text-sm" id="remote-name">...</p>
-                    </div>
-                    <button onclick="exitAdminView()" class="bg-orange-600 px-4 py-2 rounded-xl text-xs font-bold active:scale-90 transition">EXIT</button>
+        <div id="app-ui" class="hidden h-full flex flex-col">
+            <main class="flex-1 px-5 pt-12 overflow-y-auto pb-32">
+                <div id="remote-banner"
+                    class="hidden bg-orange-600 p-4 rounded-2xl mb-6 flex justify-between items-center shadow-lg">
+                    <div><p
+                            class="text-[9px] font-bold opacity-70 uppercase italic">Admin
+                            View</p><p class="font-bold text-lg"
+                            id="remote-name">...</p></div>
+                    <button onclick="exitAdminView()"
+                        class="bg-white/20 px-4 py-2 rounded-xl text-xs font-bold uppercase">กลับหน้าหลัก</button>
                 </div>
 
-                <div class="flex justify-between items-center mb-10 slide-in">
-                    <div onclick="openEditProfile()" class="cursor-pointer">
-                        <p class="text-[10px] opacity-40 uppercase font-bold tracking-widest">พนักงาน,</p>
-                        <h2 id="u-display" class="text-2xl font-bold">...</h2>
-                    </div>
-                    <div class="relative group">
-                        <img id="u-photo" onclick="triggerUpload()" src="" class="w-16 h-16 rounded-full border-2 border-blue-500 object-cover bg-zinc-900 shadow-2xl cursor-pointer active:scale-90 transition">
-                        <div class="absolute -bottom-1 -right-1 bg-blue-500 w-6 h-6 rounded-full flex items-center justify-center text-[10px] border-2 border-black">
-                            <i class="fa-solid fa-camera"></i>
+                <section id="p-home" class="page active">
+                    <div class="flex justify-between items-center mb-8">
+                        <div onclick="openEditProfile()" class="cursor-pointer">
+                            <p
+                                class="text-[10px] opacity-40 font-bold uppercase italic">Employee
+                                Name</p>
+                            <h2 id="u-display"
+                                class="text-2xl font-bold text-blue-400">...</h2>
                         </div>
-                        <input type="file" id="u-file" class="hidden" accept="image/*" onchange="uploadPhoto(this)">
+                        <img id="u-photo" onclick="openEditProfile()" src
+                            class="w-14 h-14 rounded-full border-2 border-blue-500 object-cover bg-zinc-900 shadow-2xl cursor-pointer">
                     </div>
-                </div>
 
-                <div id="rider-card" class="hidden glass-card p-6 mb-8 border-l-4 border-green-500 bounce-in">
-                    <div class="flex justify-between items-end">
-                        <div>
-                            <p class="text-[10px] opacity-50 uppercase font-bold">ยอดบิลวันนี้</p>
-                            <h3 class="text-4xl font-bold" id="today-bills">0</h3>
+                    <div id="rider-card"
+                        class="hidden glass-card p-6 mb-8 border-l-4 border-green-500">
+                        <div class="flex justify-between items-end">
+                            <div><p
+                                    class="text-[10px] opacity-50 uppercase font-bold">บิลวันนี้</p><h3
+                                    class="text-4xl font-bold"
+                                    id="today-bills">0</h3></div>
+                            <div class="flex gap-2">
+                                <button onclick="addDelivery(-1)"
+                                    class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center active:scale-90"><i
+                                        class="fa-solid fa-minus"></i></button>
+                                <button onclick="addDelivery(1)"
+                                    class="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center shadow-lg active:scale-90"><i
+                                        class="fa-solid fa-plus"></i></button>
+                            </div>
                         </div>
-                        <div class="flex gap-2">
-                            <button onclick="addDelivery(-1)" class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center active:bg-red-500/20"><i class="fa-solid fa-minus"></i></button>
-                            <button onclick="addDelivery(1)" class="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition"><i class="fa-solid fa-plus"></i></button>
-                        </div>
                     </div>
-                </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <button onclick="tapIn()" class="h-32 glass-card flex flex-col items-center justify-center gap-2 active:scale-95 transition">
-                        <i class="fa-solid fa-fingerprint text-3xl text-blue-500"></i>
-                        <span class="text-[10px] font-bold uppercase">Time In</span>
-                    </button>
-                    <button onclick="tapOut()" class="h-32 glass-card flex flex-col items-center justify-center gap-2 active:scale-95 transition">
-                        <i class="fa-solid fa-right-from-bracket text-3xl text-zinc-500"></i>
-                        <span class="text-[10px] font-bold uppercase">Time Out</span>
-                    </button>
-                </div>
-
-                <div class="mt-8 text-center bounce-in">
-                    <p class="text-[10px] opacity-30 font-bold uppercase tracking-widest">เงินเดือนโดยประมาณ</p>
-                    <h1 class="text-5xl font-bold">฿<span id="salary-view">0.00</span></h1>
-                </div>
-            </section>
-
-            <section id="p-admin" class="page">
-                <h2 class="text-2xl font-bold mb-6 text-blue-500 uppercase italic">Employee Management</h2>
-                <div id="user-list" class="space-y-3"></div>
-            </section>
-
-            <section id="p-week" class="page">
-                <h2 class="text-2xl font-bold mb-6 italic">Weekly Shifts</h2>
-                <div id="week-list" class="space-y-3"></div>
-            </section>
-
-            <section id="p-cal" class="page">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 id="mon-view" class="text-xl font-bold text-blue-500">...</h2>
-                    <div class="flex gap-4">
-                        <button onclick="moveMonth(-1)" class="p-2 opacity-50"><i class="fa-solid fa-chevron-left"></i></button>
-                        <button onclick="moveMonth(1)" class="p-2 opacity-50"><i class="fa-solid fa-chevron-right"></i></button>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="confirmAction('ลงเวลาเข้างาน?', tapIn)"
+                            class="h-32 glass-card flex flex-col items-center justify-center gap-2 active:scale-95">
+                            <i
+                                class="fa-solid fa-clock text-3xl text-blue-500"></i><span
+                                class="text-[10px] font-bold uppercase tracking-widest">Time
+                                In</span>
+                        </button>
+                        <button onclick="confirmAction('ลงเวลาออกงาน?', tapOut)"
+                            class="h-32 glass-card flex flex-col items-center justify-center gap-2 active:scale-95">
+                            <i
+                                class="fa-solid fa-clock-rotate-left text-3xl text-zinc-500"></i><span
+                                class="text-[10px] font-bold uppercase tracking-widest">Time
+                                Out</span>
+                        </button>
                     </div>
-                </div>
-                <div id="cal-grid" class="grid grid-cols-7 gap-2 mb-8 slide-in"></div>
-                <div class="mt-8 border-t border-white/5 pt-6 slide-up">
-                    <p class="text-[10px] opacity-40 font-bold uppercase mb-4 tracking-widest">Activity Logs</p>
-                    <div id="log-list" class="space-y-3"></div>
-                </div>
-            </section>
-        </main>
 
-        <nav class="fixed bottom-8 left-6 right-6 glass-card p-3 flex justify-around items-center shadow-2xl z-50">
-            <button onclick="go('p-home', this)" class="nav-btn active"><i class="fa-solid fa-house"></i></button>
-            <button id="nav-admin" onclick="go('p-admin', this)" class="nav-btn hidden"><i class="fa-solid fa-shield-halved"></i></button>
-            <button onclick="go('p-week', this)" class="nav-btn"><i class="fa-solid fa-calendar"></i></button>
-            <button onclick="go('p-cal', this)" class="nav-btn"><i class="fa-solid fa-history"></i></button>
-            <button onclick="doLogout()" class="p-4 text-red-500/30 active:text-red-500"><i class="fa-solid fa-power-off"></i></button>
-        </nav>
-    </div>
+                    <div class="mt-12 text-center">
+                        <p
+                            class="text-[10px] opacity-30 font-bold uppercase tracking-widest">เงินเดือนโดยประมาณ</p>
+                        <h1 class="text-5xl font-bold uppercase">฿<span
+                                id="salary-view">0.00</span></h1>
+                        <p id="salary-detail"
+                            class="text-[10px] opacity-40 mt-2 italic font-medium"></p>
+                    </div>
+                </section>
 
-    <script src="app.js"></script>
-</body>
+                <section id="p-admin" class="page"><h2
+                        class="text-2xl font-bold mb-6 text-blue-500 italic uppercase">พนักงานทั้งหมด</h2><div
+                        id="user-list" class="space-y-3"></div></section>
+                <section id="p-week" class="page"><h2
+                        class="text-2xl font-bold mb-6 italic uppercase tracking-tighter">ตารางเวรทำงาน</h2><div
+                        id="week-list" class="space-y-3"></div></section>
+                <section id="p-cal" class="page">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 id="mon-view"
+                            class="text-xl font-bold text-blue-500 uppercase tracking-tighter">...</h2>
+                        <div class="flex gap-4"><button
+                                onclick="moveMonth(-1)"><i
+                                    class="fa-solid fa-chevron-left"></i></button><button
+                                onclick="moveMonth(1)"><i
+                                    class="fa-solid fa-chevron-right"></i></button></div>
+                    </div>
+                    <div id="cal-grid" class="grid grid-cols-7 gap-2"></div>
+                </section>
+            </main>
+
+            <nav
+                class="fixed bottom-8 left-6 right-6 glass-card p-3 flex justify-around items-center shadow-2xl z-50">
+                <button onclick="go('p-home', this)" class="nav-btn active"><i
+                        class="fa-solid fa-house"></i></button>
+                <button id="nav-admin" onclick="go('p-admin', this)"
+                    class="nav-btn hidden"><i
+                        class="fa-solid fa-users-gear"></i></button>
+                <button onclick="go('p-week', this)" class="nav-btn"><i
+                        class="fa-solid fa-calendar-week"></i></button>
+                <button onclick="go('p-cal', this)" class="nav-btn"><i
+                        class="fa-solid fa-history"></i></button>
+                <button onclick="confirmAction('ออกจากระบบ?', doLogout)"
+                    class="p-4 text-red-500/30 hover:text-red-500 transition-colors"><i
+                        class="fa-solid fa-power-off"></i></button>
+            </nav>
+        </div>
+        <script src="app.js"></script>
+    </body>
 </html>
