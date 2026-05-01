@@ -347,4 +347,23 @@ function renderWeekly(data) {
                 <div class="flex gap-2"><input type="time" class="time-pill py-2 px-3 text-[10px]" value="${s.in}" onchange="updateShift('${d}', 'in', this.value)"><input type="time" class="time-pill py-2 px-3 text-[10px]" value="${s.out}" onchange="updateShift('${d}', 'out', this.value)"></div></div>`;
     }).join('');
 }
+// ✅ ฟังก์ชันยืนยันการกระทำ (ที่ทำให้ปุ่ม Logout ทำงานได้)
+function confirmAction(title, callback) {
+    Swal.fire({
+        title: title,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3b82f6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'ตกลง',
+        cancelButtonText: 'ยกเลิก',
+        background: '#1c1c1e',
+        color: '#fff'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            callback();
+        }
+    });
+}
+
 function updateShift(d, k, v) { db.ref(`users/${adminTargetId || currentUser.uid}/shifts/${d}/${k}`).set(v); }
