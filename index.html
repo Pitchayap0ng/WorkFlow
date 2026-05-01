@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport"
-            content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
         <title>IMS-Workflow SECURE (Full)</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -127,17 +127,22 @@
                     <div id="rider-card"
                         class="hidden glass-card p-6 mb-8 border-l-4 border-green-500">
                         <div class="flex justify-between items-end">
-                            <div><p
-                                    class="text-[10px] opacity-50 uppercase font-bold">บิลวันนี้</p><h3
-                                    class="text-4xl font-bold"
-                                    id="today-bills">0</h3></div>
+                            <div>
+                                <p
+                                    class="text-[10px] opacity-50 uppercase font-bold">บิลวันนี้</p>
+                                <!-- ✅ ID ต้องเป็น today-bills ถึงจะแสดงตัวเลขบิล -->
+                                <h3 class="text-4xl font-bold"
+                                    id="today-bills">0</h3>
+                            </div>
                             <div class="flex gap-2">
                                 <button onclick="addDelivery(-1)"
-                                    class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center active:scale-90"><i
-                                        class="fa-solid fa-minus"></i></button>
+                                    class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center active:scale-90">
+                                    <i class="fa-solid fa-minus"></i>
+                                </button>
                                 <button onclick="addDelivery(1)"
-                                    class="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center shadow-lg active:scale-90"><i
-                                        class="fa-solid fa-plus"></i></button>
+                                    class="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center shadow-lg active:scale-90">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
                             </div>
                         </div>
                     </div>

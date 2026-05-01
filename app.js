@@ -18,7 +18,6 @@ const auth = firebase.auth(), db = firebase.database();
 let currentUser = null, myInfo = {}, targetInfo = {}, logs = [], viewDate = new Date(), adminTargetId = null;
 let generatedOTP = null;
 
-// วันสำคัญ
 const HOLIDAYS = { "01-01": "ปีใหม่", "04-13": "สงกรานต์", "04-14": "สงกรานต์", "04-15": "สงกรานต์", "05-01": "แรงงาน", "07-28": "วันเฉลิมฯ", "08-12": "วันแม่", "10-13": "วัน ร.9", "12-05": "วันพ่อ", "12-31": "สิ้นปี" };
 
 // --- [ AUTH SYSTEM ] ---
@@ -27,7 +26,8 @@ auth.onAuthStateChanged(user => {
     if (user) {
         db.ref(`users/${user.uid}`).on('value', s => {
             myInfo = s.val() || {};
-            document.getElementById('nav-admin').classList.toggle('hidden', myInfo.role !== 'admin');
+            const navAdmin = document.getElementById('nav-admin');
+            if (navAdmin) navAdmin.classList.toggle('hidden', myInfo.role !== 'admin');
             if (!adminTargetId) initApp();
         });
         document.getElementById('auth-ui').classList.add('hidden');
@@ -55,38 +55,30 @@ async function sendOTP() {
     const email = document.getElementById('r-email').value.trim();
     const name = document.getElementById('r-name').value.trim();
     const user = document.getElementById('r-user').value.toLowerCase().trim();
-
     if (!email || !name || !user) return pushLog("กรุณากรอกข้อมูลให้ครบ", "warning");
-
     const checkUser = await db.ref(`usernames/${user}`).once('value');
     if (checkUser.exists()) return pushLog("Username นี้ถูกใช้งานแล้ว", "error");
-
     generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
     pushLog("กำลังส่ง OTP...", "info");
-
     const templateParams = { to_name: name, to_email: email, passcode: generatedOTP, time: "15" };
-
     emailjs.send('IMS-work', 'template_34sz4uc', templateParams)
         .then(() => {
             pushLog("ส่ง OTP สำเร็จ!");
             document.getElementById('otp-section').classList.remove('hidden');
             document.getElementById('btn-send-otp').classList.add('hidden');
-        }).catch(err => pushLog("ส่งไม่สำเร็จ ตรวจสอบ EmailJS ID", "error"));
+        }).catch(err => pushLog("ส่งไม่สำเร็จ", "error"));
 }
 
 async function doRegister() {
     const inputOTP = document.getElementById('r-otp').value.trim();
     if (inputOTP !== generatedOTP) return pushLog("รหัส OTP ไม่ถูกต้อง", "error");
-
     const name = document.getElementById('r-name').value.trim();
     const user = document.getElementById('r-user').value.toLowerCase().trim();
     const email = document.getElementById('r-email').value.trim();
     const phone = document.getElementById('r-phone').value.trim();
     const job = document.getElementById('r-job').value;
     const pw = document.getElementById('r-pw').value;
-
     if (pw.length < 6) return pushLog("รหัสผ่านต้อง 6 ตัวขึ้นไป", "warning");
-
     auth.createUserWithEmailAndPassword(email, pw).then(async r => {
         const userData = {
             displayName: name, username: user, email: email, phone: phone,
@@ -124,32 +116,21 @@ function initApp() {
         targetInfo = s.val() || {};
         document.getElementById('u-display').innerText = targetInfo.displayName || 'User';
         document.getElementById('u-photo').src = targetInfo.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-        document.getElementById('rider-card').classList.toggle('hidden', targetInfo.jobType !== 'delivery');
+        document.getElementById('rider-card').classList.toggle('hidden', targetInfo.jobType !== 'delivery'); //[cite: 1]
         renderWeekly(targetInfo);
         calculateSalary();
     });
+
     db.ref(`attendance/${tid}`).on('value', s => {
         const d = s.val();
         logs = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
+        const today = new Date().toISOString().split('T')[0];
+        const todayLog = logs.find(l => l.date === today);
+        const billDisplay = document.getElementById('today-bills');
+        if (billDisplay) billDisplay.innerText = todayLog ? (todayLog.delivery || 0) : 0; //[cite: 2]
         renderCal();
         calculateSalary();
     });
-}
-
-function renderCal() {
-    const y = viewDate.getFullYear(), m = viewDate.getMonth();
-    const names = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-    document.getElementById('mon-view').innerText = `${names[m]} ${y + 543}`;
-    const total = new Date(y, m + 1, 0).getDate(), start = new Date(y, m, 1).getDay();
-    const grid = document.getElementById('cal-grid'); grid.innerHTML = '';
-    for (let i = 0; i < start; i++) grid.innerHTML += '<div></div>';
-    for (let d = 1; d <= total; d++) {
-        const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const holidayKey = `${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const log = logs.find(l => l.date === dateStr);
-        let cls = log ? (log.isOff ? 'st-off' : 'st-normal') : 'bg-white/5 opacity-40';
-        grid.innerHTML += `<div onclick="editCalendarEntry('${dateStr}')" class="day-node ${cls} relative flex flex-col items-center justify-center h-12 text-sm cursor-pointer">${d}${HOLIDAYS[holidayKey] ? `<span class="absolute bottom-1 text-[5px] text-orange-500 font-bold">${HOLIDAYS[holidayKey]}</span>` : ''}</div>`;
-    }
 }
 
 function calculateSalary() {
@@ -168,56 +149,34 @@ function calculateSalary() {
     document.getElementById('salary-detail').innerText = `เข้างาน ${days} วัน | จัดส่ง ${bills} บิล`;
 }
 
-// ✅ UI Helpers
-function go(id, btn) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    if (btn) {
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+async function addDelivery(v) {
+    const tid = adminTargetId || currentUser.uid;
+    const d = new Date().toISOString().split('T')[0];
+    const log = logs.find(l => l.date === d);
+    if (log) {
+        const newDelivery = Math.max(0, (log.delivery || 0) + v);
+        await db.ref(`attendance/${tid}/${log.id}`).update({ delivery: newDelivery }); //[cite: 2]
+    } else {
+        pushLog("ตอกบัตรเข้างานก่อน", "warning");
     }
-    if (id === 'p-admin') loadUserList();
 }
 
-function pushLog(m, t = "success") {
-    Swal.fire({ title: m, icon: t, background: '#1c1c1e', color: '#fff', timer: 1500, showConfirmButton: false, toast: true, position: 'top' });
-}
-
-function toggleAuth(mode) {
-    document.getElementById('login-form').classList.toggle('hidden', mode === 'reg');
-    document.getElementById('reg-form').classList.toggle('hidden', mode === 'login');
-}
-
-function doLogout() { auth.signOut(); }
-
-function confirmAction(t, cb) {
-    Swal.fire({ title: 'ยืนยัน?', text: t, icon: 'question', showCancelButton: true, background: '#1c1c1e', color: '#fff' }).then(r => { if (r.isConfirmed) cb(); });
-}
-
-// --- [ ตอกบัตร ] ---
 async function tapIn() {
+    const tid = adminTargetId || currentUser.uid;
     const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
     if (logs.find(l => l.date === d)) return pushLog("ลงเวลาแล้ว", "warning");
-    await db.ref(`attendance/${adminTargetId || currentUser.uid}`).push({ date: d, checkIn: t, checkOut: '', isOff: false, delivery: 0 });
+    await db.ref(`attendance/${tid}`).push({ date: d, checkIn: t, checkOut: '', isOff: false, delivery: 0 });
 }
 
 async function tapOut() {
+    const tid = adminTargetId || currentUser.uid;
     const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
     const log = logs.find(l => l.date === d);
     if (!log) return pushLog("ยังไม่ตอกบัตรเข้า", "error");
-    await db.ref(`attendance/${adminTargetId || currentUser.uid}/${log.id}`).update({ checkOut: t });
+    await db.ref(`attendance/${tid}/${log.id}`).update({ checkOut: t });
 }
 
-async function addDelivery(v) {
-    const d = new Date().toISOString().split('T')[0];
-    const log = logs.find(l => l.date === d);
-    if (log) await db.ref(`attendance/${adminTargetId || currentUser.uid}/${log.id}`).update({ delivery: Math.max(0, (log.delivery || 0) + v) });
-    else pushLog("ตอกบัตรเข้างานก่อน", "warning");
-}
-
-function moveMonth(v) { viewDate.setMonth(viewDate.getMonth() + v); renderCal(); calculateSalary(); }
-
-// --- [ ADMIN FUNCTIONS ] ---
+// --- [ ADMIN & PROFILE FUNCTIONS ] ---
 function loadUserList() {
     db.ref('users').on('value', s => {
         const users = s.val();
@@ -230,28 +189,23 @@ function loadUserList() {
     });
 }
 
-function enterAdminView(id, name) { adminTargetId = id; document.getElementById('remote-banner').classList.remove('hidden'); document.getElementById('remote-name').innerText = name; initApp(); go('p-home'); }
-function exitAdminView() { adminTargetId = null; document.getElementById('remote-banner').classList.add('hidden'); initApp(); }
-
-function renderWeekly(data) {
-    const names = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
-    const weekContainer = document.getElementById('week-list');
-    if (!weekContainer) return;
-    weekContainer.innerHTML = names.map(d => {
-        const s = (data.shifts && data.shifts[d]) ? data.shifts[d] : { in: '08:30', out: '17:30', isOff: false };
-        return `<div class="glass-card p-4 flex justify-between items-center ${s.isOff ? 'opacity-30' : ''}">
-                <div class="flex items-center gap-3"><input type="checkbox" ${!s.isOff ? 'checked' : ''} onchange="updateShift('${d}', 'isOff', !this.checked)" class="w-5 h-5 accent-blue-500"><span class="font-bold text-xs">${d}</span></div>
-                <div class="flex gap-2"><input type="time" class="time-pill py-2 px-3 text-[10px]" value="${s.in}" onchange="updateShift('${d}', 'in', this.value)"><input type="time" class="time-pill py-2 px-3 text-[10px]" value="${s.out}" onchange="updateShift('${d}', 'out', this.value)"></div></div>`;
-    }).join('');
+function enterAdminView(id, name) {
+    adminTargetId = id; 
+    document.getElementById('remote-banner').classList.remove('hidden'); 
+    document.getElementById('remote-name').innerText = name; 
+    Swal.fire({ title: 'โหมดจัดการข้อมูล', text: `กำลังเข้าถึงข้อมูลของ: ${name}`, icon: 'info', background: '#1c1c1e', color: '#fff', timer: 1500, showConfirmButton: false }); //[cite: 1]
+    initApp(); go('p-home'); 
 }
-function updateShift(d, k, v) { db.ref(`users/${adminTargetId || currentUser.uid}/shifts/${d}/${k}`).set(v); }
 
-// ✅ [ EDIT PROFILE & IMAGE ]
+function exitAdminView() { 
+    adminTargetId = null; document.getElementById('remote-banner').classList.add('hidden'); initApp(); 
+}
+
 async function openEditProfile() {
     const tid = adminTargetId || currentUser.uid;
     const s = await db.ref(`users/${tid}`).once('value');
     const d = s.val() || {};
-    const isAdmin = myInfo.role === 'admin';
+    const isAdmin = myInfo.role === 'admin'; //[cite: 1]
     const isMe = tid === currentUser.uid;
 
     const { value: res } = await Swal.fire({
@@ -272,9 +226,7 @@ async function openEditProfile() {
                 <p class="text-blue-400 text-[10px] font-bold uppercase tracking-tighter italic">บัญชีผู้ใช้</p>
                 <div><label class="text-[9px] opacity-40 uppercase font-bold">Username</label><input id="e-user" class="time-pill w-full p-3 mt-1 bg-zinc-800" value="${d.username || ''}"></div>
                 <div><label class="text-[9px] opacity-40 uppercase font-bold">Email</label><input id="e-email" class="time-pill w-full p-3 mt-1 bg-zinc-800" value="${d.email || ''}"></div>
-                ${isMe ? `
-                <div class="pt-2"><label class="text-[9px] text-orange-400 uppercase font-bold italic">รหัสผ่านใหม่</label><input id="e-pw" type="password" class="time-pill w-full p-3 mt-1 bg-zinc-800" placeholder="******"></div>
-                <div class="pt-2 border-t border-white/5 mt-4"><label class="text-[10px] text-red-500 uppercase font-bold italic underline">ยืนยันรหัสปัจจุบัน</label><input id="curr-pw" type="password" class="time-pill w-full p-3 mt-1 bg-zinc-900 border border-red-500/30" placeholder="รหัสปัจจุบัน"></div>` : ''}
+                ${isMe ? `<div class="pt-2 border-t border-white/5 mt-4"><label class="text-[10px] text-red-500 uppercase font-bold italic underline">ยืนยันรหัสปัจจุบัน (เพื่อเปลี่ยนเมล/รหัส)</label><input id="curr-pw" type="password" class="time-pill w-full p-3 mt-1 bg-zinc-900 border border-red-500/30" placeholder="รหัสปัจจุบัน"></div>` : ''}
             </div>
             ${isAdmin ? `
             <div class="border-t border-white/10 pt-4 space-y-3">
@@ -283,25 +235,41 @@ async function openEditProfile() {
                     <div><label class="text-[9px] opacity-40 uppercase font-bold">เงินเดือน</label><input id="e-sal" type="number" class="time-pill w-full p-3 mt-1 bg-zinc-800" value="${d.salary || 15000}"></div>
                     <div><label class="text-[9px] opacity-40 uppercase font-bold">ค่าบิล</label><input id="e-bill" type="number" class="time-pill w-full p-3 mt-1 bg-zinc-800" value="${d.billRate || 40}"></div>
                 </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[9px] opacity-40 uppercase font-bold">ประเภทงาน</label>
+                        <select id="e-job" class="time-pill w-full p-3 mt-1 bg-zinc-800 text-xs">
+                            <option value="staff" ${d.jobType === 'staff' ? 'selected' : ''}>Staff (ทั่วไป)</option>
+                            <option value="delivery" ${d.jobType === 'delivery' ? 'selected' : ''}>Delivery (ไรเดอร์)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[9px] opacity-40 uppercase font-bold">สิทธิ์การใช้งาน</label>
+                        <select id="e-role" class="time-pill w-full p-3 mt-1 bg-zinc-800 text-xs">
+                            <option value="user" ${d.role === 'user' ? 'selected' : ''}>User (ทั่วไป)</option>
+                            <option value="admin" ${d.role === 'admin' ? 'selected' : ''}>Admin (ผู้ดูแล)</option>
+                        </select>
+                    </div>
+                </div>
             </div>` : ''}
         </div>`,
         showCancelButton: true, confirmButtonText: 'บันทึกข้อมูล',
         preConfirm: async () => {
             const up = { displayName: document.getElementById('e-name').value, phone: document.getElementById('e-phone').value, username: document.getElementById('e-user').value.toLowerCase().trim(), email: document.getElementById('e-email').value.trim() };
-            const curPw = document.getElementById('curr-pw')?.value, newPw = document.getElementById('e-pw')?.value, tempImg = document.getElementById('temp-img').src;
+            const curPw = document.getElementById('curr-pw')?.value, tempImg = document.getElementById('temp-img').src;
             if (tempImg.startsWith('data:image')) up.photoURL = tempImg;
-            if (isAdmin) { up.salary = parseFloat(document.getElementById('e-sal').value); up.billRate = parseFloat(document.getElementById('e-bill').value); }
+            if (isAdmin) { 
+                up.salary = parseFloat(document.getElementById('e-sal').value); 
+                up.billRate = parseFloat(document.getElementById('e-bill').value); 
+                up.jobType = document.getElementById('e-job').value; //[cite: 1]
+                up.role = document.getElementById('e-role').value; //[cite: 1]
+            }
             try {
-                if (isMe && (up.username !== d.username || up.email !== d.email || (newPw && newPw.length > 0))) {
+                if (isMe && (up.email !== d.email)) {
                     if (!curPw) throw new Error("กรุณากรอกรหัสผ่านปัจจุบัน");
                     const cred = firebase.auth.EmailAuthProvider.credential(currentUser.email, curPw);
                     await currentUser.reauthenticateWithCredential(cred);
-                    if (up.email !== currentUser.email) await currentUser.updateEmail(up.email);
-                    if (newPw) await currentUser.updatePassword(newPw);
-                }
-                if (up.username !== d.username) {
-                    await db.ref(`usernames/${d.username}`).remove();
-                    await db.ref(`usernames/${up.username}`).set({ email: up.email, uid: tid });
+                    await currentUser.updateEmail(up.email);
                 }
                 return up;
             } catch (err) { Swal.showValidationMessage(err.message); }
@@ -310,11 +278,19 @@ async function openEditProfile() {
     if (res) { await db.ref(`users/${tid}`).update(res); pushLog("บันทึกสำเร็จ"); }
 }
 
-function previewImage(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = e => { document.getElementById('temp-img').src = e.target.result; };
-        reader.readAsDataURL(input.files[0]);
+// --- [ UI HELPERS ] ---
+function renderCal() {
+    const y = viewDate.getFullYear(), m = viewDate.getMonth();
+    const names = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+    document.getElementById('mon-view').innerText = `${names[m]} ${y + 543}`;
+    const total = new Date(y, m + 1, 0).getDate(), start = new Date(y, m, 1).getDay();
+    const grid = document.getElementById('cal-grid'); grid.innerHTML = '';
+    for (let i = 0; i < start; i++) grid.innerHTML += '<div></div>';
+    for (let d = 1; d <= total; d++) {
+        const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const log = logs.find(l => l.date === dateStr);
+        let cls = log ? (log.isOff ? 'st-off' : 'st-normal') : 'bg-white/5 opacity-40';
+        grid.innerHTML += `<div onclick="editCalendarEntry('${dateStr}')" class="day-node ${cls} relative flex flex-col items-center justify-center h-12 text-sm cursor-pointer">${d}</div>`;
     }
 }
 
@@ -331,3 +307,44 @@ async function editCalendarEntry(dateStr) {
         if (log?.id) await db.ref(`attendance/${tid}/${log.id}`).update(data); else await db.ref(`attendance/${tid}`).push(data);
     } else if (res === false && log?.id) { await db.ref(`attendance/${tid}/${log.id}`).remove(); }
 }
+
+function go(id, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (btn) {
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+    if (id === 'p-admin') loadUserList();
+}
+
+function pushLog(m, t = "success") {
+    Swal.fire({ title: m, icon: t, background: '#1c1c1e', color: '#fff', timer: 1500, showConfirmButton: false, toast: true, position: 'top' });
+}
+
+function toggleAuth(mode) {
+    document.getElementById('login-form').classList.toggle('hidden', mode === 'reg');
+    document.getElementById('reg-form').classList.toggle('hidden', mode === 'login');
+}
+
+function doLogout() { auth.signOut(); }
+function moveMonth(v) { viewDate.setMonth(viewDate.getMonth() + v); renderCal(); calculateSalary(); }
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => { document.getElementById('temp-img').src = e.target.result; };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+function renderWeekly(data) {
+    const names = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+    const weekContainer = document.getElementById('week-list');
+    if (!weekContainer) return;
+    weekContainer.innerHTML = names.map(d => {
+        const s = (data.shifts && data.shifts[d]) ? data.shifts[d] : { in: '08:30', out: '17:30', isOff: false };
+        return `<div class="glass-card p-4 flex justify-between items-center ${s.isOff ? 'opacity-30' : ''}">
+                <div class="flex items-center gap-3"><input type="checkbox" ${!s.isOff ? 'checked' : ''} onchange="updateShift('${d}', 'isOff', !this.checked)" class="w-5 h-5 accent-blue-500"><span class="font-bold text-xs">${d}</span></div>
+                <div class="flex gap-2"><input type="time" class="time-pill py-2 px-3 text-[10px]" value="${s.in}" onchange="updateShift('${d}', 'in', this.value)"><input type="time" class="time-pill py-2 px-3 text-[10px]" value="${s.out}" onchange="updateShift('${d}', 'out', this.value)"></div></div>`;
+    }).join('');
+}
+function updateShift(d, k, v) { db.ref(`users/${adminTargetId || currentUser.uid}/shifts/${d}/${k}`).set(v); }

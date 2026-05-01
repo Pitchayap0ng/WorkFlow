@@ -4,6 +4,7 @@
     font-family: 'Plus Jakarta Sans', sans-serif;
     -webkit-tap-highlight-color: transparent;
     outline: none;
+    touch-action: manipulation;
 }
 
 body {
