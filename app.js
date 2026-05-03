@@ -366,4 +366,64 @@ function confirmAction(title, callback) {
     });
 }
 
+let timerInterval = null; // ตัวแปรสำหรับหยุด/เริ่มนาฬิกา
+
+// ✅ แก้ไขฟังก์ชัน initApp เพื่อให้เริ่มนับเวลาเมื่อตรวจพบว่ามีการ Tap In แล้ว
+function initApp() {
+    const tid = adminTargetId || currentUser.uid;
+    
+    // ดึงข้อมูลการเข้างาน
+    db.ref(`attendance/${tid}`).on('value', s => {
+        const d = s.val(); 
+        logs = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
+        const today = new Date().toISOString().split('T')[0];
+        const todayLog = logs.find(l => l.date === today);
+
+        // แสดงผลบิล
+        document.getElementById('today-bills').innerText = todayLog ? (todayLog.delivery || 0) : 0;
+        
+        // เริ่มหรือหยุดนาฬิกาจับเวลา
+        handleWorkTimer(todayLog); 
+
+        renderCal(); 
+        calculateSalary();
+    });
+}
+
+// ✅ ฟังก์ชันจัดการนาฬิกาจับเวลา[span_3](start_span)[span_3](end_span)
+function handleWorkTimer(log) {
+    if (timerInterval) clearInterval(timerInterval); // ล้างค่าเก่าก่อนป้องกันเลขวิ่งซ้อน
+
+    if (log && log.tin && !log.tout) {
+        // กรณีเข้างานแล้วแต่ยังไม่ออก: ให้นับเดินหน้าไปเรื่อยๆ
+        timerInterval = setInterval(() => {
+            const now = new Date();
+            const startTime = new Date(`${log.date} ${log.tin}`);
+            const diff = now - startTime;
+            document.getElementById('work-timer').innerText = formatDiff(diff);
+        }, 1000);
+    } else if (log && log.tin && log.tout) {
+        // กรณีออกงานแล้ว: คำนวณเวลาสุทธิแล้วแสดงค้างไว้
+        const startTime = new Date(`${log.date} ${log.tin}`);
+        const endTime = new Date(`${log.date} ${log.tout}`);
+        const diff = endTime - startTime;
+        document.getElementById('work-timer').innerText = formatDiff(diff);
+        document.getElementById('work-timer').classList.replace('text-blue-400', 'text-zinc-400');
+    } else {
+        // ยังไม่เข้างาน
+        document.getElementById('work-timer').innerText = "00:00:00";
+    }
+}
+
+// ✅ ฟังก์ชันแปลงมิลลิวินาทีเป็น ชม:นาที:วินาที[span_4](start_span)[span_4](end_span)
+function formatDiff(ms) {
+    if (ms < 0) return "00:00:00";
+    let totalSec = Math.floor(ms / 1000);
+    let hr = Math.floor(totalSec / 3600);
+    let min = Math.floor((totalSec % 3600) / 60);
+    let sec = totalSec % 60;
+    return `${String(hr).padStart(2, '0')}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+
 function updateShift(d, k, v) { db.ref(`users/${adminTargetId || currentUser.uid}/shifts/${d}/${k}`).set(v); }
