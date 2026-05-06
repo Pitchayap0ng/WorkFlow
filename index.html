@@ -7,6 +7,14 @@
         <title>IMS-Workflow SECURE</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <!-- EmailJS SDK -->
+        <script type="text/javascript"
+            src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+        <script type="text/javascript">
+       (function(){
+          emailjs.init("WSvF2N1nopC2xfuZo"); // API KEY ของคุณ
+       })();
+    </script>
         <script
             src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
         <script
@@ -24,25 +32,44 @@
             <div class="max-w-md mx-auto">
                 <h1
                     class="text-4xl font-bold text-blue-500 text-center mb-10 italic uppercase">IMS-WORKFLOW</h1>
+
                 <div id="login-form" class="space-y-4">
-                    <input type="text" id="l-id"
-                        placeholder="Username หรือ Email"
-                        class="time-pill w-full p-5 bg-zinc-900">
-                    <input type="password" id="l-pw" placeholder="รหัสผ่าน"
-                        class="time-pill w-full p-5 bg-zinc-900">
-                    <button onclick="doLogin()"
-                        class="btn-primary w-full py-5 text-lg">เข้าสู่ระบบ</button>
+                    <div id="input-area" class="space-y-4">
+                        <input type="text" id="l-id"
+                            placeholder="Username หรือ Email"
+                            class="time-pill w-full p-5 bg-zinc-900">
+                        <input type="password" id="l-pw" placeholder="รหัสผ่าน"
+                            class="time-pill w-full p-5 bg-zinc-900">
+                        <button onclick="sendOTPViaEmail()"
+                            class="btn-primary w-full py-5 text-lg">ขอรหัส OTP
+                            เพื่อเข้าสู่ระบบ</button>
+                    </div>
+
+                    <!-- ส่วนกรอก OTP (ซ่อนไว้เริ่มต้น) -->
+                    <div id="otp-area"
+                        class="hidden space-y-4 pt-6 border-t border-white/10 text-center">
+                        <p class="text-xs text-blue-400">ส่งรหัส OTP
+                            ไปยังอีเมลเรียบร้อยแล้ว</p>
+                        <input type="text" id="l-otp" placeholder="รหัส 6 หลัก"
+                            class="time-pill w-full p-5 bg-zinc-900 text-center text-2xl tracking-[0.5em]">
+                        <button onclick="verifyAndLogin()"
+                            class="btn-primary w-full py-5 text-lg bg-green-600">ยืนยันรหัสและเข้างาน</button>
+                        <button onclick="location.reload()"
+                            class="w-full text-[10px] opacity-40 uppercase">ย้อนกลับ
+                            / ขอรหัสใหม่</button>
+                    </div>
+
                     <div
                         class="text-center text-[11px] opacity-50 mt-4 uppercase">ยังไม่มีบัญชี?
                         <button onclick="toggleAuth('reg')"
                             class="text-blue-500 font-bold">สมัครสมาชิก</button></div>
                 </div>
 
+                <!-- Reg Form เหมือนเดิม -->
                 <div id="reg-form" class="hidden space-y-4">
                     <input type="text" id="r-name" placeholder="ชื่อ-นามสกุล"
                         class="time-pill w-full p-4 bg-zinc-900">
-                    <input type="text" id="r-user"
-                        placeholder="Username (ภาษาอังกฤษ)"
+                    <input type="text" id="r-user" placeholder="Username"
                         class="time-pill w-full p-4 bg-zinc-900">
                     <input type="email" id="r-email" placeholder="Email"
                         class="time-pill w-full p-4 bg-zinc-900">
@@ -50,8 +77,7 @@
                         <option value="staff">Staff</option>
                         <option value="delivery">Delivery</option>
                     </select>
-                    <input type="password" id="r-pw"
-                        placeholder="รหัสผ่าน (6 ตัวขึ้นไป)"
+                    <input type="password" id="r-pw" placeholder="รหัสผ่าน"
                         class="time-pill w-full p-4 bg-zinc-900">
                     <button onclick="doRegister()"
                         class="btn-primary w-full py-4 bg-green-600">ลงทะเบียน</button>
@@ -61,10 +87,10 @@
             </div>
         </div>
 
-        <!-- App UI -->
+        <!-- App UI (เนื้อหาแอปคงเดิม) -->
         <div id="app-ui" class="hidden h-full flex flex-col">
+            <!-- ... (เนื้อหาส่วน main และ nav คงเดิมตามไฟล์ source 2) ... -->
             <main class="flex-1 px-5 pt-12 overflow-y-auto pb-32">
-                <!-- Admin View Banner -->
                 <div id="remote-banner"
                     class="hidden bg-orange-600 p-4 rounded-2xl mb-6 flex justify-between items-center shadow-lg">
                     <div><p
@@ -74,8 +100,6 @@
                     <button onclick="exitAdminView()"
                         class="bg-white/20 px-4 py-2 rounded-xl text-xs font-bold">EXIT</button>
                 </div>
-
-                <!-- Page Sections -->
                 <section id="p-home" class="page active">
                     <div class="flex justify-between items-center mb-8">
                         <div><p
@@ -132,7 +156,6 @@
                                 class="text-4xl font-mono font-bold text-blue-400">00:00:00</div></div>
                     </div>
                 </section>
-
                 <section id="p-admin" class="page"><h2
                         class="text-2xl font-bold mb-6 italic uppercase text-blue-500">Management</h2><div
                         id="user-list" class="space-y-3"></div></section>
@@ -152,7 +175,6 @@
                     <div id="cal-grid" class="grid grid-cols-7 gap-2"></div>
                 </section>
             </main>
-
             <nav
                 class="fixed bottom-8 left-6 right-6 glass-card p-3 flex justify-around items-center shadow-2xl z-50">
                 <button onclick="go('p-home', this)" class="nav-btn active"><i

@@ -1,4 +1,4 @@
-// ✅ 1. Firebase Config
+// ✅ (ส่วน Config และ Init คงเดิมจาก source 1)
 const firebaseConfig = {
     apiKey: "AIzaSyA11zPbXEFs-sdIHKaxhkprkoGSGP1whfg",
     authDomain: "ims-fei.firebaseapp.com",
@@ -7,7 +7,6 @@ const firebaseConfig = {
     storageBucket: "ims-fei.firebasestorage.app",
     appId: "1:791711191329:web:0a4ba03cd5f11eb71bae60"
 };
-
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth(),
     db = firebase.database();
@@ -19,6 +18,8 @@ let currentUser = null,
     viewDate = new Date(),
     adminTargetId = null;
 let timerInterval = null;
+let generatedOTP = null; // เก็บ OTP ชั่วคราว
+let tempLoginData = null; // เก็บข้อมูลเมลและรหัสชั่วคราว
 
 // --- [ UTILS ] ---
 function pushLog(m, t = "success") {
@@ -34,7 +35,7 @@ function pushLog(m, t = "success") {
     });
 }
 
-// --- [ AUTH SYSTEM (SUPPORT USERNAME) ] ---
+// --- [ AUTH SYSTEM ] ---
 auth.onAuthStateChanged(user => {
     currentUser = user;
     if (user) {
@@ -51,38 +52,83 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-async function doLogin() {
+// ✅ แก้ไขใหม่: ฟังก์ชันส่ง OTP ผ่าน EmailJS
+async function sendOTPViaEmail() {
     const input = document.getElementById('l-id').value.trim();
     const pw = document.getElementById('l-pw').value.trim();
-    if (!input || !pw) return pushLog("กรุณากรอกข้อมูล", "warning");
+    if (!input || !pw) return pushLog("กรุณากรอกข้อมูลให้ครบ", "warning");
 
-    if (input.includes('@')) {
-        auth.signInWithEmailAndPassword(input, pw).catch(e => pushLog("รหัสผ่านไม่ถูกต้อง", "error"));
-    } else {
-        // Username Lookup[cite: 1]
-        db.ref('usernames/' + input.toLowerCase()).once('value', s => {
-            const data = s.val();
-            if (data) auth.signInWithEmailAndPassword(data.email, pw).catch(e => pushLog("รหัสไม่ถูกต้อง", "error"));
-            else pushLog("ไม่พบ Username นี้", "error");
+    let email = input;
+    // ถ้าใส่ Username ให้ไปหา Email มาก่อน
+    if (!input.includes('@')) {
+        const s = await db.ref('usernames/' + input.toLowerCase()).once('value');
+        if (s.exists()) email = s.val().email;
+        else return pushLog("ไม่พบ Username นี้", "error");
+    }
+
+    // สร้าง OTP 6 หลัก และคำนวณเวลาหมดอายุ (15 นาที)
+    generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+    const currentTime = new Date();
+    const expireTime = new Date(currentTime.getTime() + 15 * 60000).toLocaleTimeString('th-TH', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    // เตรียมตัวแปรให้ตรงกับ Template: {{to_email}}, {{passcode}}, {{time}}
+    const templateParams = {
+        to_email: email,
+        passcode: generatedOTP,
+        time: expireTime
+    };
+
+    pushLog("กำลังส่งรหัส OTP...", "info");
+
+    emailjs.send('service_default', 'template_34sz4uc', templateParams)
+        .then(() => {
+            pushLog("รหัส OTP ส่งไปที่เมลแล้ว!", "success");
+            // สลับโหมด UI
+            document.getElementById('input-area').classList.add('hidden');
+            document.getElementById('otp-area').classList.remove('hidden');
+            tempLoginData = {
+                email,
+                pw
+            };
+        })
+        .catch(err => {
+            console.error(err);
+            pushLog("ส่งเมลไม่สำเร็จ", "error");
         });
+}
+
+// ✅ แก้ไขใหม่: ฟังก์ชันตรวจสอบ OTP และ Login จริง
+function verifyAndLogin() {
+    const userOTP = document.getElementById('l-otp').value.trim();
+    if (userOTP === generatedOTP) {
+        auth.signInWithEmailAndPassword(tempLoginData.email, tempLoginData.pw)
+            .then(() => {
+                pushLog("ยืนยันตัวตนสำเร็จ!");
+            })
+            .catch(e => {
+                pushLog("รหัสผ่านไม่ถูกต้อง", "error");
+                location.reload();
+            });
+    } else {
+        pushLog("รหัส OTP ไม่ถูกต้อง", "error");
     }
 }
 
+// --- [ อื่นๆ คงเดิมตาม source 1 ] ---
 async function doRegister() {
     const name = document.getElementById('r-name').value.trim();
     const user = document.getElementById('r-user').value.trim().toLowerCase();
     const email = document.getElementById('r-email').value.trim();
     const job = document.getElementById('r-job').value;
     const pw = document.getElementById('r-pw').value;
-
     if (!name || !user || !email || !pw) return pushLog("กรอกข้อมูลให้ครบ", "warning");
-
     try {
         const check = await db.ref('usernames/' + user).once('value');
         if (check.exists()) return pushLog("Username นี้มีคนใช้แล้ว", "warning");
-
         const res = await auth.createUserWithEmailAndPassword(email, pw);
-        // บันทึกข้อมูลผูก UID[cite: 1]
         await db.ref(`users/${res.user.uid}`).set({
             displayName: name,
             username: user,
@@ -102,11 +148,9 @@ async function doRegister() {
     }
 }
 
-// --- [ MAIN APP LOGIC ] ---
 function initApp() {
     const tid = adminTargetId || (currentUser ? currentUser.uid : null);
     if (!tid) return;
-
     db.ref(`users/${tid}`).on('value', s => {
         targetInfo = s.val() || {};
         document.getElementById('u-display').innerText = targetInfo.displayName || 'User';
@@ -115,7 +159,6 @@ function initApp() {
         renderWeekly(targetInfo);
         calculateSalary();
     });
-
     db.ref(`attendance/${tid}`).on('value', s => {
         const d = s.val();
         logs = d ? Object.keys(d).map(k => ({
@@ -130,8 +173,8 @@ function initApp() {
         calculateSalary();
     });
 }
+// ... (ฟังก์ชันอื่นๆ: updateShift, addDelivery, tapIn, tapOut, editCalendarEntry, loadUserList, calculateSalary, formatDiff, renderWeekly, renderCal, go, moveMonth, toggleAuth, confirmAction คงเดิม) ...
 
-// --- [ ACTIONS WITH SWAL ] ---
 function updateShift(day, key, value) {
     const tid = adminTargetId || currentUser.uid;
     db.ref(`users/${tid}/shifts/${day}/${key}`).set(value).then(() => pushLog(`บันทึกตาราง ${day} แล้ว`));
@@ -211,7 +254,6 @@ async function editCalendarEntry(dateStr) {
     }
 }
 
-// --- [ ADMIN & OTHERS ] ---
 function enterAdminView(id, name) {
     adminTargetId = id;
     document.getElementById('remote-banner').classList.remove('hidden');
