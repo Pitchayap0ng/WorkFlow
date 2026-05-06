@@ -296,8 +296,8 @@ async function openEditLog(dateStr) {
             <div>
                 <label class="text-[10px] uppercase font-bold opacity-40 ml-1">สถานะการทำงาน</label>
                 <select id="swal-off" class="w-full mt-1 p-4 rounded-2xl bg-white/5 border border-white/10 text-white outline-none focus:border-blue-500 transition-all">
-                    <option value="false" class="bg-zinc-900" ${!log.isOff ? 'selected' : ''}>🟢 ทำงานปกติ</option>
-                    <option value="true" class="bg-zinc-900" ${log.isOff ? 'selected' : ''}>🔴 หยุดงาน (OFF)</option>
+                    <option value="false" class="bg-zinc-900" ${!log.isOff ? 'selected' : ''}>ทำงานปกติ</option>
+                    <option value="true" class="bg-zinc-900" ${log.isOff ? 'selected' : ''}>หยุดงาน (OFF)</option>
                 </select>
             </div>
             
