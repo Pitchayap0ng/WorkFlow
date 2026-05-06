@@ -16,9 +16,10 @@ const auth = firebase.auth(), db = firebase.database();
     emailjs.init("WSvF2N1nopC2xfuZo");
 })();
 
+// ✅ 3. Global Variables (ประกาศที่เดียวเพื่อแก้ SyntaxError)
 let currentUser = null, myInfo = {}, targetInfo = {}, logs = [], viewDate = new Date(), adminTargetId = null;
 let generatedOTP = null;
-let timerInterval = null; // ✅ ตัวแปรนับเวลา[cite: 4]
+let timerInterval = null; // <--- ประกาศไว้ที่นี่ที่เดียว ห้ามประกาศซ้ำข้างล่าง
 
 const HOLIDAYS = { "01-01": "ปีใหม่", "04-13": "สงกรานต์", "04-14": "สงกรานต์", "04-15": "สงกรานต์", "05-01": "แรงงาน", "07-28": "วันเฉลิมฯ", "08-12": "วันแม่", "10-13": "วัน ร.9", "12-05": "วันพ่อ", "12-31": "สิ้นปี" };
 
@@ -40,9 +41,9 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-// ✅ 3. Live Timer Logic[cite: 4]
+// ✅ 4. Live Timer Logic (ปรับปรุงให้ใช้ checkIn/checkOut)
 function handleWorkTimer(log) {
-    if (timerInterval) clearInterval(timerInterval);
+    if (timerInterval) clearInterval(timerInterval); 
     const display = document.getElementById('work-timer');
     if (!display) return;
 
@@ -50,17 +51,14 @@ function handleWorkTimer(log) {
         display.classList.add('text-blue-400');
         display.classList.remove('text-zinc-500');
         timerInterval = setInterval(() => {
-            const [h, m] = log.checkIn.split(':');
-            const start = new Date();
-            start.setHours(parseInt(h), parseInt(m), 0);
-            const diff = new Date() - start;
+            const now = new Date();
+            const start = new Date(`${log.date}T${log.checkIn}:00`);
+            const diff = now - start;
             display.innerText = formatDiff(diff);
         }, 1000);
     } else if (log && log.checkIn && log.checkOut) {
-        const [h1, m1] = log.checkIn.split(':');
-        const [h2, m2] = log.checkOut.split(':');
-        const start = new Date(); start.setHours(parseInt(h1), parseInt(m1), 0);
-        const end = new Date(); end.setHours(parseInt(h2), parseInt(m2), 0);
+        const start = new Date(`${log.date}T${log.checkIn}:00`);
+        const end = new Date(`${log.date}T${log.checkOut}:00`);
         display.innerText = formatDiff(end - start);
         display.classList.replace('text-blue-400', 'text-zinc-500');
     } else {
@@ -97,20 +95,19 @@ function initApp() {
         const billDisplay = document.getElementById('today-bills');
         if (billDisplay) billDisplay.innerText = todayLog ? (todayLog.delivery || 0) : 0;
 
-        handleWorkTimer(todayLog); // ✅ เรียกใช้นาฬิกา[cite: 4]
+        handleWorkTimer(todayLog); 
         renderCal();
         calculateSalary();
     });
 }
 
-// ✅ แทรก handleWorkTimer เข้าไปใน TapIn / TapOut[cite: 4]
+// ✅ 5. Tap In / Out
 async function tapIn() {
     const tid = adminTargetId || currentUser.uid;
     const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
     if (logs.find(l => l.date === d)) return pushLog("ลงเวลาแล้ว", "warning");
     const newLog = { date: d, checkIn: t, checkOut: '', isOff: false, delivery: 0 };
     await db.ref(`attendance/${tid}`).push(newLog);
-    handleWorkTimer(newLog);
 }
 
 async function tapOut() {
@@ -119,10 +116,9 @@ async function tapOut() {
     const log = logs.find(l => l.date === d && !l.checkOut);
     if (!log) return pushLog("ยังไม่ตอกบัตรเข้า หรือ ออกงานแล้ว", "error");
     await db.ref(`attendance/${tid}/${log.id}`).update({ checkOut: t });
-    handleWorkTimer({ ...log, checkOut: t });
 }
 
-// --- ฟังก์ชันอื่นๆ ตามต้นฉบับ ห้ามลบ ---[cite: 4]
+// ✅ 6. Auth Functions (Login/Register/OTP/Forgot)[cite: 4]
 async function doLogin() {
     let id = document.getElementById('l-id').value.toLowerCase().trim();
     const pw = document.getElementById('l-pw').value;
@@ -193,6 +189,7 @@ async function forgotPw() {
     }
 }
 
+// ✅ 7. Salary & Delivery
 function calculateSalary() {
     const u = targetInfo; const base = (u.salary || 0) / 30; const bRate = u.billRate || 40;
     const m = viewDate.getMonth(), y = viewDate.getFullYear();
@@ -221,6 +218,7 @@ async function addDelivery(v) {
     }
 }
 
+// ✅ 8. Admin & Profile Management[cite: 4]
 function loadUserList() {
     db.ref('users').on('value', s => {
         const users = s.val();
@@ -237,7 +235,6 @@ function enterAdminView(id, name) {
     adminTargetId = id;
     document.getElementById('remote-banner').classList.remove('hidden');
     document.getElementById('remote-name').innerText = name;
-    Swal.fire({ title: 'โหมดจัดการข้อมูล', text: `กำลังเข้าถึงข้อมูลของ: ${name}`, icon: 'info', background: '#1c1c1e', color: '#fff', timer: 1500, showConfirmButton: false });
     initApp(); go('p-home');
 }
 
@@ -322,6 +319,7 @@ async function openEditProfile() {
     if (res) { await db.ref(`users/${tid}`).update(res); pushLog("บันทึกสำเร็จ"); }
 }
 
+// ✅ 9. Calendar & Weekly Shifts[cite: 4]
 function renderCal() {
     const y = viewDate.getFullYear(), m = viewDate.getMonth();
     const names = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
@@ -351,6 +349,21 @@ async function editCalendarEntry(dateStr) {
     } else if (res === false && log?.id) { await db.ref(`attendance/${tid}/${log.id}`).remove(); }
 }
 
+function renderWeekly(data) {
+    const names = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
+    const weekContainer = document.getElementById('week-list');
+    if (!weekContainer) return;
+    weekContainer.innerHTML = names.map(d => {
+        const s = (data.shifts && data.shifts[d]) ? data.shifts[d] : { in: '08:30', out: '17:30', isOff: false };
+        return `<div class="glass-card p-4 flex justify-between items-center ${s.isOff ? 'opacity-30' : ''}">
+                <div class="flex items-center gap-3"><input type="checkbox" ${!s.isOff ? 'checked' : ''} onchange="updateShift('${d}', 'isOff', !this.checked)" class="w-5 h-5 accent-blue-500"><span class="font-bold text-xs">${d}</span></div>
+                <div class="flex gap-2"><input type="time" class="time-pill py-2 px-3 text-[10px]" value="${s.in}" onchange="updateShift('${d}', 'in', this.value)"><input type="time" class="time-pill py-2 px-3 text-[10px]" value="${s.out}" onchange="updateShift('${d}', 'out', this.value)"></div></div>`;
+    }).join('');
+}
+
+function updateShift(d, k, v) { db.ref(`users/${adminTargetId || currentUser.uid}/shifts/${d}/${k}`).set(v); }
+
+// ✅ 10. UI Utilities
 function go(id, btn) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(id).classList.add('active');
@@ -363,6 +376,15 @@ function go(id, btn) {
 
 function pushLog(m, t = "success") {
     Swal.fire({ title: m, icon: t, background: '#1c1c1e', color: '#fff', timer: 1500, showConfirmButton: false, toast: true, position: 'top' });
+}
+
+function confirmAction(title, callback) {
+    Swal.fire({
+        title: title, icon: 'question', showCancelButton: true,
+        confirmButtonColor: '#3b82f6', cancelButtonColor: '#d33',
+        confirmButtonText: 'ตกลง', cancelButtonText: 'ยกเลิก',
+        background: '#1c1c1e', color: '#fff'
+    }).then((result) => { if (result.isConfirmed) callback(); });
 }
 
 function toggleAuth(mode) {
@@ -379,95 +401,3 @@ function previewImage(input) {
         reader.readAsDataURL(input.files[0]);
     }
 }
-function renderWeekly(data) {
-    const names = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
-    const weekContainer = document.getElementById('week-list');
-    if (!weekContainer) return;
-    weekContainer.innerHTML = names.map(d => {
-        const s = (data.shifts && data.shifts[d]) ? data.shifts[d] : { in: '08:30', out: '17:30', isOff: false };
-        return `<div class="glass-card p-4 flex justify-between items-center ${s.isOff ? 'opacity-30' : ''}">
-                <div class="flex items-center gap-3"><input type="checkbox" ${!s.isOff ? 'checked' : ''} onchange="updateShift('${d}', 'isOff', !this.checked)" class="w-5 h-5 accent-blue-500"><span class="font-bold text-xs">${d}</span></div>
-                <div class="flex gap-2"><input type="time" class="time-pill py-2 px-3 text-[10px]" value="${s.in}" onchange="updateShift('${d}', 'in', this.value)"><input type="time" class="time-pill py-2 px-3 text-[10px]" value="${s.out}" onchange="updateShift('${d}', 'out', this.value)"></div></div>`;
-    }).join('');
-}
-
-// ✅ ฟังก์ชันยืนยันการกระทำ (ที่ทำให้ปุ่ม Logout ทำงานได้)
-function confirmAction(title, callback) {
-    Swal.fire({
-        title: title,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#3b82f6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'ตกลง',
-        cancelButtonText: 'ยกเลิก',
-        background: '#1c1c1e',
-        color: '#fff'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            callback();
-        }
-    });
-}
-
-let timerInterval = null; // ตัวแปรสำหรับหยุด/เริ่มนาฬิกา
-
-// ✅ แก้ไขฟังก์ชัน initApp เพื่อให้เริ่มนับเวลาเมื่อตรวจพบว่ามีการ Tap In แล้ว
-function initApp() {
-    const tid = adminTargetId || currentUser.uid;
-
-    // ดึงข้อมูลการเข้างาน
-    db.ref(`attendance/${tid}`).on('value', s => {
-        const d = s.val();
-        logs = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
-        const today = new Date().toISOString().split('T')[0];
-        const todayLog = logs.find(l => l.date === today);
-
-        // แสดงผลบิล
-        document.getElementById('today-bills').innerText = todayLog ? (todayLog.delivery || 0) : 0;
-
-        // เริ่มหรือหยุดนาฬิกาจับเวลา
-        handleWorkTimer(todayLog);
-
-        renderCal();
-        calculateSalary();
-    });
-}
-
-// ✅ ฟังก์ชันจัดการนาฬิกาจับเวลา[span_3](start_span)[span_3](end_span)
-function handleWorkTimer(log) {
-    if (timerInterval) clearInterval(timerInterval); // ล้างค่าเก่าก่อนป้องกันเลขวิ่งซ้อน
-
-    if (log && log.tin && !log.tout) {
-        // กรณีเข้างานแล้วแต่ยังไม่ออก: ให้นับเดินหน้าไปเรื่อยๆ
-        timerInterval = setInterval(() => {
-            const now = new Date();
-            const startTime = new Date(`${log.date} ${log.tin}`);
-            const diff = now - startTime;
-            document.getElementById('work-timer').innerText = formatDiff(diff);
-        }, 1000);
-    } else if (log && log.tin && log.tout) {
-        // กรณีออกงานแล้ว: คำนวณเวลาสุทธิแล้วแสดงค้างไว้
-        const startTime = new Date(`${log.date} ${log.tin}`);
-        const endTime = new Date(`${log.date} ${log.tout}`);
-        const diff = endTime - startTime;
-        document.getElementById('work-timer').innerText = formatDiff(diff);
-        document.getElementById('work-timer').classList.replace('text-blue-400', 'text-zinc-400');
-    } else {
-        // ยังไม่เข้างาน
-        document.getElementById('work-timer').innerText = "00:00:00";
-    }
-}
-
-// ✅ ฟังก์ชันแปลงมิลลิวินาทีเป็น ชม:นาที:วินาที[span_4](start_span)[span_4](end_span)
-function formatDiff(ms) {
-    if (ms < 0) return "00:00:00";
-    let totalSec = Math.floor(ms / 1000);
-    let hr = Math.floor(totalSec / 3600);
-    let min = Math.floor((totalSec % 3600) / 60);
-    let sec = totalSec % 60;
-    return `${String(hr).padStart(2, '0')}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
-}
-
-
-function updateShift(d, k, v) { db.ref(`users/${adminTargetId || currentUser.uid}/shifts/${d}/${k}`).set(v); }
