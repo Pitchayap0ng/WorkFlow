@@ -16,10 +16,10 @@ const auth = firebase.auth(), db = firebase.database();
     emailjs.init("WSvF2N1nopC2xfuZo");
 })();
 
-// ✅ 3. Global Variables (ประกาศที่เดียวเพื่อแก้ SyntaxError)
+// ✅ 3. Global Variables
 let currentUser = null, myInfo = {}, targetInfo = {}, logs = [], viewDate = new Date(), adminTargetId = null;
 let generatedOTP = null;
-let timerInterval = null; // <--- ประกาศไว้ที่นี่ที่เดียว ห้ามประกาศซ้ำข้างล่าง
+let timerInterval = null;
 
 const HOLIDAYS = { "01-01": "ปีใหม่", "04-13": "สงกรานต์", "04-14": "สงกรานต์", "04-15": "สงกรานต์", "05-01": "แรงงาน", "07-28": "วันเฉลิมฯ", "08-12": "วันแม่", "10-13": "วัน ร.9", "12-05": "วันพ่อ", "12-31": "สิ้นปี" };
 
@@ -41,9 +41,9 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-// ✅ 4. Live Timer Logic (ปรับปรุงให้ใช้ checkIn/checkOut)
+// ✅ 4. Live Timer Logic
 function handleWorkTimer(log) {
-    if (timerInterval) clearInterval(timerInterval); 
+    if (timerInterval) clearInterval(timerInterval);
     const display = document.getElementById('work-timer');
     if (!display) return;
 
@@ -95,7 +95,7 @@ function initApp() {
         const billDisplay = document.getElementById('today-bills');
         if (billDisplay) billDisplay.innerText = todayLog ? (todayLog.delivery || 0) : 0;
 
-        handleWorkTimer(todayLog); 
+        handleWorkTimer(todayLog);
         renderCal();
         calculateSalary();
     });
@@ -118,7 +118,7 @@ async function tapOut() {
     await db.ref(`attendance/${tid}/${log.id}`).update({ checkOut: t });
 }
 
-// ✅ 6. Auth Functions (Login/Register/OTP/Forgot)[cite: 4]
+// ✅ 6. Auth Functions
 async function doLogin() {
     let id = document.getElementById('l-id').value.toLowerCase().trim();
     const pw = document.getElementById('l-pw').value;
@@ -218,7 +218,7 @@ async function addDelivery(v) {
     }
 }
 
-// ✅ 8. Admin & Profile Management[cite: 4]
+// ✅ 8. Admin & Profile Management
 function loadUserList() {
     db.ref('users').on('value', s => {
         const users = s.val();
@@ -319,7 +319,7 @@ async function openEditProfile() {
     if (res) { await db.ref(`users/${tid}`).update(res); pushLog("บันทึกสำเร็จ"); }
 }
 
-// ✅ 9. Calendar & Weekly Shifts[cite: 4]
+// ✅ 9. Calendar & Weekly Shifts
 function renderCal() {
     const y = viewDate.getFullYear(), m = viewDate.getMonth();
     const names = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
