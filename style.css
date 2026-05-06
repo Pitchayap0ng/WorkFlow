@@ -3,7 +3,6 @@
 * {
     font-family: 'Plus Jakarta Sans', sans-serif;
     -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
 }
 
 body {
@@ -11,7 +10,6 @@ body {
     color: #fff;
     overflow: hidden;
     margin: 0;
-    padding: 0;
 }
 
 .glass-card {
@@ -28,6 +26,7 @@ body {
     transition: 0.3s;
     color: white;
     border: none;
+    cursor: pointer;
 }
 
 .page {
@@ -54,14 +53,14 @@ body {
     padding: 16px;
     font-size: 22px;
     color: rgba(255, 255, 255, 0.15);
-    transition: 0.4s;
     background: none;
     border: none;
+    cursor: pointer;
 }
 
 .nav-btn.active {
     color: #3b82f6;
-    transform: translateY(-5px) scale(1.1);
+    transform: translateY(-5px);
 }
 
 .time-pill {

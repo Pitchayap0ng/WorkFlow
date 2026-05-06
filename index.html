@@ -5,7 +5,6 @@
         <meta name="viewport"
             content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
         <title>IMS-Workflow SECURE</title>
-        <!-- External Libraries -->
         <script src="https://cdn.tailwindcss.com"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script
@@ -20,14 +19,14 @@
     </head>
     <body class="bg-black text-white h-screen overflow-hidden font-sans">
 
-        <!-- Auth UI -->
+        <!-- Auth UI (Login/Register) -->
         <div id="auth-ui" class="p-8 pt-12 h-full overflow-y-auto">
             <div class="max-w-md mx-auto">
                 <h1
                     class="text-4xl font-bold text-blue-500 text-center mb-10 italic uppercase">IMS-WORKFLOW</h1>
                 <div id="login-form" class="space-y-4">
                     <input type="text" id="l-id"
-                        placeholder="อีเมล หรือ ชื่อผู้ใช้"
+                        placeholder="Username หรือ Email"
                         class="time-pill w-full p-5 bg-zinc-900">
                     <input type="password" id="l-pw" placeholder="รหัสผ่าน"
                         class="time-pill w-full p-5 bg-zinc-900">
@@ -42,7 +41,8 @@
                 <div id="reg-form" class="hidden space-y-4">
                     <input type="text" id="r-name" placeholder="ชื่อ-นามสกุล"
                         class="time-pill w-full p-4 bg-zinc-900">
-                    <input type="text" id="r-user" placeholder="Username"
+                    <input type="text" id="r-user"
+                        placeholder="Username (ภาษาอังกฤษ)"
                         class="time-pill w-full p-4 bg-zinc-900">
                     <input type="email" id="r-email" placeholder="Email"
                         class="time-pill w-full p-4 bg-zinc-900">
@@ -64,16 +64,18 @@
         <!-- App UI -->
         <div id="app-ui" class="hidden h-full flex flex-col">
             <main class="flex-1 px-5 pt-12 overflow-y-auto pb-32">
+                <!-- Admin View Banner -->
                 <div id="remote-banner"
                     class="hidden bg-orange-600 p-4 rounded-2xl mb-6 flex justify-between items-center shadow-lg">
                     <div><p
-                            class="text-[9px] font-bold opacity-70 uppercase italic">Admin
+                            class="text-[9px] font-bold opacity-70 uppercase italic">Viewing
                             Mode</p><p class="font-bold text-lg"
                             id="remote-name">...</p></div>
                     <button onclick="exitAdminView()"
                         class="bg-white/20 px-4 py-2 rounded-xl text-xs font-bold">EXIT</button>
                 </div>
 
+                <!-- Page Sections -->
                 <section id="p-home" class="page active">
                     <div class="flex justify-between items-center mb-8">
                         <div><p
@@ -102,19 +104,15 @@
                     </div>
                     <div class="grid grid-cols-2 gap-4 mb-8">
                         <button onclick="confirmAction('ลงเวลาเข้างาน?', tapIn)"
-                            class="h-32 glass-card flex flex-col items-center justify-center gap-2">
-                            <i
+                            class="h-32 glass-card flex flex-col items-center justify-center gap-2"><i
                                 class="fa-solid fa-clock text-3xl text-blue-500"></i><span
                                 class="text-[10px] font-bold uppercase">Time
-                                In</span>
-                        </button>
+                                In</span></button>
                         <button onclick="confirmAction('ลงเวลาออกงาน?', tapOut)"
-                            class="h-32 glass-card flex flex-col items-center justify-center gap-2">
-                            <i
+                            class="h-32 glass-card flex flex-col items-center justify-center gap-2"><i
                                 class="fa-solid fa-clock-rotate-left text-3xl text-zinc-500"></i><span
                                 class="text-[10px] font-bold uppercase">Time
-                                Out</span>
-                        </button>
+                                Out</span></button>
                     </div>
                     <div class="space-y-6 text-center">
                         <div class="flex flex-col items-center">
@@ -122,12 +120,10 @@
                                 class="text-[10px] opacity-30 font-bold uppercase">Estimated
                                 Salary</p>
                             <div
-                                class="flex items-baseline justify-center gap-1">
-                                <span
+                                class="flex items-baseline justify-center gap-1"><span
                                     class="text-2xl font-bold text-white/50">฿</span><h1
                                     id="salary-view"
-                                    class="text-5xl font-bold">0.00</h1>
-                            </div>
+                                    class="text-5xl font-bold">0.00</h1></div>
                             <p id="salary-detail"
                                 class="text-[10px] opacity-40 mt-1 italic"></p>
                         </div>
@@ -138,11 +134,10 @@
                 </section>
 
                 <section id="p-admin" class="page"><h2
-                        class="text-2xl font-bold mb-6 italic uppercase text-blue-500">Staff
-                        Management</h2><div id="user-list"
-                        class="space-y-3"></div></section>
+                        class="text-2xl font-bold mb-6 italic uppercase text-blue-500">Management</h2><div
+                        id="user-list" class="space-y-3"></div></section>
                 <section id="p-week" class="page"><h2
-                        class="text-2xl font-bold mb-6 italic uppercase">Weekly
+                        class="text-2xl font-bold mb-6 italic uppercase">My
                         Schedule</h2><div id="week-list"
                         class="space-y-3"></div></section>
                 <section id="p-cal" class="page">

@@ -20,7 +20,21 @@ let currentUser = null,
     adminTargetId = null;
 let timerInterval = null;
 
-// --- [ AUTH SYSTEM ] ---
+// --- [ UTILS ] ---
+function pushLog(m, t = "success") {
+    Swal.fire({
+        title: m,
+        icon: t,
+        background: '#1c1c1e',
+        color: '#fff',
+        timer: 1500,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top'
+    });
+}
+
+// --- [ AUTH SYSTEM (SUPPORT USERNAME) ] ---
 auth.onAuthStateChanged(user => {
     currentUser = user;
     if (user) {
@@ -37,6 +51,58 @@ auth.onAuthStateChanged(user => {
     }
 });
 
+async function doLogin() {
+    const input = document.getElementById('l-id').value.trim();
+    const pw = document.getElementById('l-pw').value.trim();
+    if (!input || !pw) return pushLog("กรุณากรอกข้อมูล", "warning");
+
+    if (input.includes('@')) {
+        auth.signInWithEmailAndPassword(input, pw).catch(e => pushLog("รหัสผ่านไม่ถูกต้อง", "error"));
+    } else {
+        // Username Lookup[cite: 1]
+        db.ref('usernames/' + input.toLowerCase()).once('value', s => {
+            const data = s.val();
+            if (data) auth.signInWithEmailAndPassword(data.email, pw).catch(e => pushLog("รหัสไม่ถูกต้อง", "error"));
+            else pushLog("ไม่พบ Username นี้", "error");
+        });
+    }
+}
+
+async function doRegister() {
+    const name = document.getElementById('r-name').value.trim();
+    const user = document.getElementById('r-user').value.trim().toLowerCase();
+    const email = document.getElementById('r-email').value.trim();
+    const job = document.getElementById('r-job').value;
+    const pw = document.getElementById('r-pw').value;
+
+    if (!name || !user || !email || !pw) return pushLog("กรอกข้อมูลให้ครบ", "warning");
+
+    try {
+        const check = await db.ref('usernames/' + user).once('value');
+        if (check.exists()) return pushLog("Username นี้มีคนใช้แล้ว", "warning");
+
+        const res = await auth.createUserWithEmailAndPassword(email, pw);
+        // บันทึกข้อมูลผูก UID[cite: 1]
+        await db.ref(`users/${res.user.uid}`).set({
+            displayName: name,
+            username: user,
+            email,
+            jobType: job,
+            role: 'staff',
+            salary: 15000,
+            billRate: 40
+        });
+        await db.ref(`usernames/${user}`).set({
+            email: email,
+            uid: res.user.uid
+        });
+        pushLog("ลงทะเบียนสำเร็จ");
+    } catch (e) {
+        pushLog(e.message, "error");
+    }
+}
+
+// --- [ MAIN APP LOGIC ] ---
 function initApp() {
     const tid = adminTargetId || (currentUser ? currentUser.uid : null);
     if (!tid) return;
@@ -58,19 +124,17 @@ function initApp() {
         })) : [];
         const today = new Date().toISOString().split('T')[0];
         const todayLog = logs.find(l => l.date === today);
-        if (document.getElementById('today-bills')) {
-            document.getElementById('today-bills').innerText = todayLog ? (todayLog.delivery || 0) : 0;
-        }
+        if (document.getElementById('today-bills')) document.getElementById('today-bills').innerText = todayLog ? (todayLog.delivery || 0) : 0;
         handleWorkTimer(todayLog);
         renderCal();
         calculateSalary();
     });
 }
 
-// ✅ 4. บันทึกข้อมูลแยกรายคน (ใช้ tid)
+// --- [ ACTIONS WITH SWAL ] ---
 function updateShift(day, key, value) {
     const tid = adminTargetId || currentUser.uid;
-    db.ref(`users/${tid}/shifts/${day}/${key}`).set(value);
+    db.ref(`users/${tid}/shifts/${day}/${key}`).set(value).then(() => pushLog(`บันทึกตาราง ${day} แล้ว`));
 }
 
 async function addDelivery(v) {
@@ -78,20 +142,19 @@ async function addDelivery(v) {
     const d = new Date().toISOString().split('T')[0];
     const log = logs.find(l => l.date === d);
     if (log) {
-        const newDelivery = Math.max(0, (log.delivery || 0) + v);
+        const newVal = Math.max(0, (log.delivery || 0) + v);
         await db.ref(`attendance/${tid}/${log.id}`).update({
-            delivery: newDelivery
+            delivery: newVal
         });
-    } else {
-        pushLog("ต้องตอกบัตรเข้างานก่อน", "warning");
-    }
+        pushLog(`อัปเดตบิล: ${newVal}`);
+    } else pushLog("ยังไม่ได้ตอกบัตรเข้างาน", "warning");
 }
 
 async function tapIn() {
     const tid = adminTargetId || currentUser.uid;
     const d = new Date().toISOString().split('T')[0],
         t = new Date().toTimeString().slice(0, 5);
-    if (logs.find(l => l.date === d)) return pushLog("ลงเวลาแล้ว", "warning");
+    if (logs.find(l => l.date === d)) return pushLog("ตอกเข้าแล้ว", "warning");
     await db.ref(`attendance/${tid}`).push({
         date: d,
         checkIn: t,
@@ -99,6 +162,7 @@ async function tapIn() {
         isOff: false,
         delivery: 0
     });
+    pushLog("ลงเวลาเข้างานสำเร็จ");
 }
 
 async function tapOut() {
@@ -106,10 +170,11 @@ async function tapOut() {
     const d = new Date().toISOString().split('T')[0],
         t = new Date().toTimeString().slice(0, 5);
     const log = logs.find(l => l.date === d && !l.checkOut);
-    if (!log) return pushLog("ยังไม่ได้ตอกเข้า", "error");
+    if (!log) return pushLog("ไม่พบประวัติเข้างาน", "error");
     await db.ref(`attendance/${tid}/${log.id}`).update({
         checkOut: t
     });
+    pushLog("ลงเวลาออกงานสำเร็จ");
 }
 
 async function editCalendarEntry(dateStr) {
@@ -126,7 +191,7 @@ async function editCalendarEntry(dateStr) {
                <input id="sw-bill" type="number" class="time-pill w-full" value="${log?.delivery || 0}">`,
         showDenyButton: true,
         showCancelButton: true,
-        confirmButtonText: 'บันทึก',
+        confirmButtonText: 'เซฟ',
         denyButtonText: 'ลบ'
     });
     if (res) {
@@ -139,12 +204,14 @@ async function editCalendarEntry(dateStr) {
         };
         if (log?.id) await db.ref(`attendance/${tid}/${log.id}`).update(data);
         else await db.ref(`attendance/${tid}`).push(data);
+        pushLog("แก้ไขข้อมูลสำเร็จ");
     } else if (res === false && log?.id) {
         await db.ref(`attendance/${tid}/${log.id}`).remove();
+        pushLog("ลบข้อมูลแล้ว", "info");
     }
 }
 
-// --- Admin Logic ---
+// --- [ ADMIN & OTHERS ] ---
 function enterAdminView(id, name) {
     adminTargetId = id;
     document.getElementById('remote-banner').classList.remove('hidden');
@@ -172,7 +239,6 @@ function loadUserList() {
     });
 }
 
-// --- Helpers ---
 function calculateSalary() {
     const u = targetInfo;
     const base = (u.salary || 0) / 30,
@@ -192,7 +258,7 @@ function calculateSalary() {
     document.getElementById('salary-view').innerText = total.toLocaleString(undefined, {
         minimumFractionDigits: 2
     });
-    document.getElementById('salary-detail').innerText = `เข้างาน ${days} วัน | จัดส่ง ${bills} บิล`;
+    document.getElementById('salary-detail').innerText = `มาทำงาน ${days} วัน | ส่ง ${bills} บิล`;
 }
 
 function handleWorkTimer(log) {
@@ -204,9 +270,7 @@ function handleWorkTimer(log) {
             const diff = new Date() - new Date(`${log.date}T${log.checkIn}:00`);
             display.innerText = formatDiff(diff);
         }, 1000);
-    } else {
-        display.innerText = log?.checkOut ? formatDiff(new Date(`${log.date}T${log.checkOut}:00`) - new Date(`${log.date}T${log.checkIn}:00`)) : "00:00:00";
-    }
+    } else display.innerText = log?.checkOut ? formatDiff(new Date(`${log.date}T${log.checkOut}:00`) - new Date(`${log.date}T${log.checkIn}:00`)) : "00:00:00";
 }
 
 function formatDiff(ms) {
@@ -245,37 +309,8 @@ function renderCal() {
     }
 }
 
-async function doLogin() {
-    const id = document.getElementById('l-id').value;
-    const pw = document.getElementById('l-pw').value;
-    auth.signInWithEmailAndPassword(id, pw).catch(e => pushLog("เข้าสู่ระบบไม่สำเร็จ", "error"));
-}
-
-async function doRegister() {
-    const name = document.getElementById('r-name').value;
-    const email = document.getElementById('r-email').value;
-    const user = document.getElementById('r-user').value;
-    const job = document.getElementById('r-job').value;
-    const pw = document.getElementById('r-pw').value;
-    try {
-        const res = await auth.createUserWithEmailAndPassword(email, pw);
-        await db.ref(`users/${res.user.uid}`).set({
-            displayName: name,
-            email,
-            username: user,
-            jobType: job,
-            role: 'staff',
-            salary: 15000,
-            billRate: 40
-        });
-        pushLog("ลงทะเบียนสำเร็จ");
-    } catch (e) {
-        pushLog(e.message, "error");
-    }
-}
-
-async function doLogout() {
-    auth.signOut();
+function doLogout() {
+    auth.signOut().then(() => pushLog("ออกจากระบบแล้ว", "info"));
 }
 
 function go(id, btn) {
@@ -292,19 +327,6 @@ function moveMonth(v) {
     viewDate.setMonth(viewDate.getMonth() + v);
     renderCal();
     calculateSalary();
-}
-
-function pushLog(m, t = "success") {
-    Swal.fire({
-        title: m,
-        icon: t,
-        background: '#1c1c1e',
-        color: '#fff',
-        timer: 1500,
-        showConfirmButton: false,
-        toast: true,
-        position: 'top'
-    });
 }
 
 function toggleAuth(mode) {
