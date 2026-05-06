@@ -3,7 +3,6 @@
 * {
     font-family: 'Plus Jakarta Sans', sans-serif;
     -webkit-tap-highlight-color: transparent;
-    outline: none;
     touch-action: manipulation;
 }
 
@@ -11,12 +10,13 @@ body {
     background: #000;
     color: #fff;
     overflow: hidden;
+    margin: 0;
+    padding: 0;
 }
 
 .glass-card {
     background: rgba(255, 255, 255, 0.02);
     backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 28px;
 }
@@ -25,32 +25,19 @@ body {
     background: #3b82f6;
     border-radius: 20px;
     font-weight: bold;
-    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.15);
     transition: 0.3s;
-}
-
-.btn-primary:active {
-    transform: scale(0.96);
-    opacity: 0.9;
+    color: white;
+    border: none;
 }
 
 .page {
     display: none;
+    height: 100%;
+    overflow-y: auto;
 }
 
 .page.active {
     display: block;
-}
-
-.day-node {
-    aspect-ratio: 1;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: bold;
-    cursor: pointer;
 }
 
 .st-normal {
@@ -68,6 +55,8 @@ body {
     font-size: 22px;
     color: rgba(255, 255, 255, 0.15);
     transition: 0.4s;
+    background: none;
+    border: none;
 }
 
 .nav-btn.active {
@@ -77,26 +66,18 @@ body {
 
 .time-pill {
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.04);
     border-radius: 18px;
     padding: 14px;
     color: white;
+    border: none;
+    outline: none;
 }
 
 #work-timer {
-    text-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
     font-variant-numeric: tabular-nums;
     letter-spacing: 2px;
 }
 
-#salary-view {
-    line-height: 1.1;
-}
-
 ::-webkit-scrollbar {
     display: none;
-}
-
-.swal2-container {
-    touch-action: none;
 }
