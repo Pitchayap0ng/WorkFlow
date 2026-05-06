@@ -3,50 +3,128 @@
 * {
     font-family: 'Plus Jakarta Sans', sans-serif;
     -webkit-tap-highlight-color: transparent;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* เพิ่มความลื่นไหลให้ทุก element */
 }
 
 body {
     background: #000;
     color: #fff;
-    overflow: hidden;
     margin: 0;
+    overflow: hidden;
 }
 
+/* --- [ ANIMATION DEFINITIONS ] --- */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* อัปเกรดสไตล์ช่องกรอกข้อมูลให้เป็นกระจกโปร่งแสง */
+.time-pill {
+    background: rgba(255, 255, 255, 0.05) !important;
+    /* เปลี่ยนจากขาวทึบเป็นขาวใส 5% */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 16px;
+    padding: 12px 16px;
+    color: white !important;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+/* เมื่อกดที่ช่อง ให้มีแสงสีฟ้าเรืองๆ ออกมา */
+.time-pill:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+}
+
+/* แก้ไขสีของ Placeholder (ตัวอักษรจางๆ ในช่อง) */
+::placeholder {
+    color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* สำหรับช่องที่ "อ่านได้อย่างเดียว" (Username/Email) ให้ดูจางลงอีกนิด */
+input[readonly] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* หน้าเดือน: ช่องวันหยุดจะเป็นสีแดงจางๆ */
+.st-off {
+    background: rgba(239, 68, 68, 0.15) !important;
+    /* สีแดง 15% */
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    color: #f87171 !important;
+    /* ตัวเลขสีแดงอ่อน */
+    opacity: 0.7;
+}
+
+/* หน้าเดือน: ช่องทำงานปกติ (สีน้ำเงิน) */
+.st-normal {
+    background: rgba(59, 130, 246, 0.2) !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+/* --- [ GLASS CARD UPGRADE ] --- */
 .glass-card {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(25px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 28px;
+    animation: fadeInUp 0.5s ease-out;
+    /* การ์ดจะค่อยๆ ลอยขึ้นเมื่อโชว์ */
 }
 
-.btn-primary {
-    background: #3b82f6;
-    border-radius: 20px;
-    font-weight: bold;
-    transition: 0.3s;
-    color: white;
-    border: none;
-    cursor: pointer;
+.glass-card:active {
+    transform: scale(0.97);
 }
 
+/* --- [ PAGE TRANSITIONS ] --- */
 .page {
     display: none;
-    height: 100%;
-    overflow-y: auto;
+    animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .page.active {
     display: block;
 }
 
-.st-normal {
-    background: #3b82f6 !important;
-    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+/* --- [ BUTTON & INTERACTIVE ] --- */
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border-radius: 20px;
+    font-weight: bold;
+    color: white;
+    border: none;
+    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.2);
 }
 
-.st-off {
-    background: #ef4444 !important;
-    opacity: 0.6;
+.btn-primary:active {
+    transform: scale(0.95);
+    box-shadow: 0 5px 10px rgba(59, 130, 246, 0.1);
 }
 
 .nav-btn {
@@ -55,28 +133,51 @@ body {
     color: rgba(255, 255, 255, 0.15);
     background: none;
     border: none;
-    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 .nav-btn.active {
     color: #3b82f6;
-    transform: translateY(-5px);
+    transform: translateY(-8px) scale(1.2);
+    /* ปุ่มเมนูที่เลือกจะเด้งขึ้น */
 }
 
-.time-pill {
-    background: rgba(255, 255, 255, 0.04);
-    border-radius: 18px;
-    padding: 14px;
-    color: white;
-    border: none;
-    outline: none;
+/* --- [ MODAL ANIMATION ] --- */
+#modal-profile {
+    transition: opacity 0.3s ease;
 }
 
-#work-timer {
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 2px;
+#modal-profile .glass-card {
+    animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-::-webkit-scrollbar {
-    display: none;
+/* --- [ CALENDAR & LIST DELAY ] --- */
+#week-list>div,
+#user-list>div {
+    animation: fadeInUp 0.4s ease-out backwards;
+}
+
+/* ใส่ Delay ให้แต่ละแถวค่อยๆ โผล่ตามลำดับ */
+#week-list>div:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+#week-list>div:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+#week-list>div:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+#week-list>div:nth-child(4) {
+    animation-delay: 0.25s;
+}
+
+#week-list>div:nth-child(5) {
+    animation-delay: 0.3s;
+}
+
+#week-list>div:nth-child(6) {
+    animation-delay: 0.35s;
 }

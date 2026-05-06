@@ -4,17 +4,12 @@
         <meta charset="UTF-8">
         <meta name="viewport"
             content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-        <title>IMS-Workflow FULL SECURE</title>
+        <title>IMS-Workflow Full System</title>
+        <!-- Libraries -->
         <script src="https://cdn.tailwindcss.com"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <!-- EmailJS SDK -->
-        <script type="text/javascript"
+        <script
             src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-        <script type="text/javascript">
-       (function(){
-          emailjs.init("WSvF2N1nopC2xfuZo"); // API KEY ของคุณ[cite: 2]
-       })();
-    </script>
         <script
             src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
         <script
@@ -23,30 +18,15 @@
             src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
         <link rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        <style>
-        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px; }
-        .time-pill { border-radius: 18px; border: 1px solid rgba(255,255,255,0.1); outline: none; transition: 0.3s; color: white; }
-        .time-pill:focus { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
-        .btn-primary { background: linear-gradient(135deg, #3b82f6, #2563eb); border-radius: 18px; font-weight: bold; transition: 0.3s; }
-        .btn-primary:active { transform: scale(0.98); }
-        .nav-btn { color: rgba(255,255,255,0.2); transition: 0.3s; font-size: 1.4rem; }
-        .nav-btn.active { color: #3b82f6; transform: translateY(-5px); }
-        .page { display: none; }
-        .page.active { display: block; animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .day-node.st-normal { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
-        .day-node.st-off { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
-    </style>
+        <link rel="stylesheet" href="style.css">
     </head>
-    <body class="bg-black text-white h-screen overflow-hidden font-sans">
+    <body class="bg-black text-white h-screen overflow-hidden">
 
-        <!-- Auth UI (Login/Register) -->
+        <!-- Auth UI -->
         <div id="auth-ui" class="p-8 pt-12 h-full overflow-y-auto">
-            <div class="max-w-md mx-auto">
+            <div class="max-w-md mx-auto text-center">
                 <h1
-                    class="text-4xl font-bold text-blue-500 text-center mb-10 italic uppercase">IMS-WORKFLOW</h1>
-
-                <!-- Login Form -->
+                    class="text-4xl font-bold text-blue-500 mb-10 italic uppercase">IMS-WORKFLOW</h1>
                 <div id="login-form" class="space-y-4">
                     <input type="text" id="l-id"
                         placeholder="Username หรือ Email"
@@ -55,21 +35,16 @@
                         class="time-pill w-full p-5 bg-zinc-900">
                     <button onclick="doLogin()"
                         class="btn-primary w-full py-5 text-lg">เข้าสู่ระบบ</button>
-                    <div
-                        class="text-center text-[11px] opacity-50 mt-4 uppercase">ยังไม่มีบัญชี?
+                    <p class="text-xs opacity-50 mt-4 uppercase">ยังไม่มีบัญชี?
                         <button onclick="toggleAuth('reg')"
-                            class="text-blue-500 font-bold">สมัครสมาชิก</button>
-                    </div>
+                            class="text-blue-500 font-bold">สมัครสมาชิก</button></p>
                 </div>
-
-                <!-- Register Form -->
                 <div id="reg-form" class="hidden space-y-4">
                     <div id="reg-input-area" class="space-y-4">
                         <input type="text" id="r-name"
                             placeholder="ชื่อ-นามสกุล"
                             class="time-pill w-full p-4 bg-zinc-900">
-                        <input type="text" id="r-user"
-                            placeholder="Username (ภาษาอังกฤษ)"
+                        <input type="text" id="r-user" placeholder="Username"
                             class="time-pill w-full p-4 bg-zinc-900">
                         <input type="email" id="r-email" placeholder="Email"
                             class="time-pill w-full p-4 bg-zinc-900">
@@ -84,19 +59,15 @@
                         <button onclick="sendRegistrationOTP()"
                             class="btn-primary w-full py-4 bg-blue-600">ส่งรหัสยืนยันไปที่อีเมล</button>
                     </div>
-
                     <div id="reg-otp-area"
-                        class="hidden space-y-4 pt-4 border-t border-white/10 text-center">
-                        <p class="text-xs text-orange-400">กรุณากรอกรหัส OTP 6
-                            หลักจากอีเมลของคุณ</p>
+                        class="hidden space-y-4 pt-4 border-t border-white/10">
                         <input type="text" id="r-otp" placeholder="OTP CODE"
-                            class="time-pill w-full p-4 bg-zinc-900 text-center text-2xl tracking-[0.5em]">
+                            class="time-pill w-full p-4 text-center text-2xl tracking-[0.5em]">
                         <button onclick="verifyAndRegister()"
                             class="btn-primary w-full py-4 bg-green-600">ยืนยันและสมัครสมาชิก</button>
                     </div>
-
                     <button onclick="toggleAuth('login')"
-                        class="w-full text-[10px] opacity-40 font-bold uppercase mt-2">ยกเลิก</button>
+                        class="w-full text-[10px] opacity-40 uppercase mt-2">ยกเลิก</button>
                 </div>
             </div>
         </div>
@@ -104,7 +75,6 @@
         <!-- App UI -->
         <div id="app-ui" class="hidden h-full flex flex-col">
             <main class="flex-1 px-5 pt-12 overflow-y-auto pb-32">
-                <!-- Admin View Banner -->
                 <div id="remote-banner"
                     class="hidden bg-orange-600 p-4 rounded-2xl mb-6 flex justify-between items-center shadow-lg">
                     <div><p
@@ -115,15 +85,15 @@
                         class="bg-white/20 px-4 py-2 rounded-xl text-xs font-bold">EXIT</button>
                 </div>
 
-                <!-- Page Home -->
+                <!-- Home Section -->
                 <section id="p-home" class="page active">
                     <div class="flex justify-between items-center mb-8">
                         <div><p
                                 class="text-[10px] opacity-40 font-bold uppercase">Employee</p><h2
                                 id="u-display"
                                 class="text-2xl font-bold text-blue-400">...</h2></div>
-                        <img id="u-photo"
-                            class="w-14 h-14 rounded-full border-2 border-blue-500 object-cover bg-zinc-900">
+                        <img id="u-photo" onclick="openProfileModal()"
+                            class="w-14 h-14 rounded-full border-2 border-blue-500 object-cover bg-zinc-900 cursor-pointer active:scale-95 transition-transform">
                     </div>
                     <div id="rider-card"
                         class="hidden glass-card p-6 mb-8 border-l-4 border-green-500">
@@ -134,10 +104,10 @@
                                     id="today-bills">0</h3></div>
                             <div class="flex gap-2">
                                 <button onclick="addDelivery(-1)"
-                                    class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center"><i
+                                    class="w-12 h-12 bg-white/5 rounded-2xl"><i
                                         class="fa-solid fa-minus"></i></button>
                                 <button onclick="addDelivery(1)"
-                                    class="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center"><i
+                                    class="w-12 h-12 bg-green-500 rounded-2xl"><i
                                         class="fa-solid fa-plus"></i></button>
                             </div>
                         </div>
@@ -155,54 +125,44 @@
                                 Out</span></button>
                     </div>
                     <div class="space-y-6 text-center">
-                        <div class="flex flex-col items-center">
-                            <p
+                        <div><p
                                 class="text-[10px] opacity-30 font-bold uppercase">Estimated
-                                Salary</p>
-                            <div
+                                Salary</p><div
                                 class="flex items-baseline justify-center gap-1"><span
                                     class="text-2xl font-bold text-white/50">฿</span><h1
                                     id="salary-view"
-                                    class="text-5xl font-bold">0.00</h1></div>
-                            <p id="salary-detail"
-                                class="text-[10px] opacity-40 mt-1 italic"></p>
-                        </div>
+                                    class="text-5xl font-bold">0.00</h1></div><p
+                                id="salary-detail"
+                                class="text-[10px] opacity-40 mt-1 italic"></p></div>
                         <div class="p-5 glass-card bg-blue-500/5"><div
                                 id="work-timer"
                                 class="text-4xl font-mono font-bold text-blue-400">00:00:00</div></div>
                     </div>
                 </section>
 
-                <!-- Page Admin -->
-                <section id="p-admin" class="page">
-                    <h2
-                        class="text-2xl font-bold mb-6 italic uppercase text-blue-500">Management</h2>
-                    <div id="user-list" class="space-y-3"></div>
-                </section>
+                <!-- Admin Section -->
+                <section id="p-admin" class="page"><h2
+                        class="text-2xl font-bold mb-6 italic uppercase text-blue-500">Management</h2><div
+                        id="user-list" class="space-y-3"></div></section>
 
-                <!-- Page Week -->
-                <section id="p-week" class="page">
-                    <h2 class="text-2xl font-bold mb-6 italic uppercase">My
-                        Schedule</h2>
-                    <div id="week-list" class="space-y-3"></div>
-                </section>
+                <!-- Schedule Section -->
+                <section id="p-week" class="page"><h2
+                        class="text-2xl font-bold mb-6 italic uppercase">My
+                        Schedule</h2><div id="week-list"
+                        class="space-y-3"></div></section>
 
-                <!-- Page History (Calendar) -->
+                <!-- Calendar Section -->
                 <section id="p-cal" class="page">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 id="mon-view"
-                            class="text-xl font-bold text-blue-500 uppercase">...</h2>
-                        <div class="flex gap-4">
-                            <button onclick="moveMonth(-1)"><i
-                                    class="fa-solid fa-chevron-left"></i></button>
-                            <button onclick="moveMonth(1)"><i
-                                    class="fa-solid fa-chevron-right"></i></button>
-                        </div>
-                    </div>
-                    <div id="cal-grid"
-                        class="grid grid-cols-7 gap-2 text-center text-[10px] font-bold opacity-40 mb-2">
-                        <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
-                    </div>
+                    <div class="flex justify-between items-center mb-6"><h2
+                            id="mon-view"
+                            class="text-xl font-bold text-blue-500 uppercase">...</h2><div
+                            class="flex gap-4"><button
+                                onclick="moveMonth(-1)"><i
+                                    class="fa-solid fa-chevron-left"></i></button><button
+                                onclick="moveMonth(1)"><i
+                                    class="fa-solid fa-chevron-right"></i></button></div></div>
+                    <div
+                        class="grid grid-cols-7 gap-2 text-center text-[10px] font-bold opacity-40 mb-2"><div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div></div>
                     <div id="cal-days" class="grid grid-cols-7 gap-2"></div>
                 </section>
             </main>
@@ -223,6 +183,150 @@
                     class="p-4 text-red-500/40"><i
                         class="fa-solid fa-power-off"></i></button>
             </nav>
+        </div>
+
+        <!-- Modal Profile -->
+        <div id="modal-profile"
+            class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+            <div
+                class="glass-card w-full max-w-md max-h-[90vh] overflow-y-auto p-8 border-white/10 shadow-2xl relative">
+
+                <!-- Header & Close Button -->
+                <div class="flex justify-between items-center mb-8">
+                    <h3 class="text-2xl font-bold text-blue-400">Settings</h3>
+                    <button onclick="closeProfileModal()"
+                        class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10 transition-all">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- Profile Image Section -->
+                <div class="mb-8 flex flex-col items-center">
+                    <div class="relative group">
+                        <div
+                            class="absolute inset-0 bg-blue-500 blur-2xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                        <img id="edit-photo-preview"
+                            class="relative w-28 h-28 rounded-[2.5rem] object-cover border-4 border-blue-500 shadow-2xl transition-transform group-hover:scale-105">
+                        <label
+                            class="absolute -bottom-2 -right-2 bg-blue-600 w-10 h-10 rounded-2xl flex items-center justify-center cursor-pointer active:scale-90 transition-transform shadow-lg border-4 border-[#121212]">
+                            <i class="fa-solid fa-camera text-white"></i>
+                            <input type="file" id="img-input" class="hidden"
+                                accept="image/*"
+                                onchange="previewProfileImage(this)">
+                        </label>
+                    </div>
+                    <input type="hidden" id="edit-photo">
+                    <p
+                        class="text-[10px] uppercase tracking-widest font-bold opacity-30 mt-4">Tap
+                        camera to change photo</p>
+                </div>
+
+                <!-- Input Fields -->
+                <div class="space-y-5">
+                    <!-- Username & Email (Read Only) -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label
+                                class="text-[10px] uppercase font-bold opacity-40 ml-1">Username</label>
+                            <input type="text" id="edit-user"
+                                class="time-pill w-full text-xs opacity-60"
+                                readonly>
+                        </div>
+                        <div class="space-y-1">
+                            <label
+                                class="text-[10px] uppercase font-bold opacity-40 ml-1">Email</label>
+                            <input type="email" id="edit-email"
+                                class="time-pill w-full text-xs opacity-60"
+                                readonly>
+                        </div>
+                    </div>
+
+                    <!-- Password Field (Highlighting) -->
+                    <div
+                        class="p-5 bg-white/5 rounded-[2rem] border border-white/5 shadow-inner">
+                        <label
+                            class="text-[10px] uppercase font-bold text-blue-400 ml-1 mb-2 block">Change
+                            Password</label>
+                        <input type="password" id="edit-pw"
+                            class="time-pill w-full bg-black/20 border-white/5 placeholder:text-white/20"
+                            placeholder="••••••••">
+                    </div>
+
+                    <!-- Display Name -->
+                    <div class="space-y-1">
+                        <label
+                            class="text-[10px] uppercase font-bold text-blue-400 ml-1">Display
+                            Name</label>
+                        <input type="text" id="edit-name"
+                            class="time-pill w-full bg-white/5 border-white/10">
+                    </div>
+
+                    <!-- Admin Only Section -->
+                    <div id="admin-only-settings"
+                        class="hidden space-y-4 pt-6 mt-6 border-t border-white/10">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i
+                                class="fa-solid fa-shield-halved text-blue-500 text-xs"></i>
+                            <p
+                                class="text-[10px] font-bold text-blue-500 tracking-tighter uppercase">Admin
+                                Privileges</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label
+                                    class="text-[9px] opacity-40 ml-1 font-bold uppercase">Salary</label>
+                                <input type="number" id="edit-salary"
+                                    class="time-pill w-full text-sm"
+                                    placeholder="0">
+                            </div>
+                            <div class="space-y-1">
+                                <label
+                                    class="text-[9px] opacity-40 ml-1 font-bold uppercase">Bill
+                                    Rate</label>
+                                <input type="number" id="edit-bill-rate"
+                                    class="time-pill w-full text-sm"
+                                    placeholder="0">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label
+                                    class="text-[9px] opacity-40 ml-1 font-bold uppercase">Job
+                                    Type</label>
+                                <select id="edit-job"
+                                    class="time-pill w-full text-xs bg-white/5 border-white/10 appearance-none">
+                                    <option value="staff"
+                                        class="bg-zinc-900">Staff</option>
+                                    <option value="delivery"
+                                        class="bg-zinc-900">Delivery</option>
+                                </select>
+                            </div>
+                            <div class="space-y-1">
+                                <label
+                                    class="text-[9px] opacity-40 ml-1 font-bold uppercase">System
+                                    Role</label>
+                                <select id="edit-role"
+                                    class="time-pill w-full text-xs bg-white/5 border-white/10 appearance-none">
+                                    <option value="staff"
+                                        class="bg-zinc-900">Staff Role</option>
+                                    <option value="admin"
+                                        class="bg-zinc-900">Admin Role</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <div class="pt-10">
+                    <button onclick="saveProfile()"
+                        class="w-full py-5 btn-primary font-bold text-sm tracking-widest active:scale-[0.98] transition-transform">
+                        SAVE CHANGES
+                    </button>
+                </div>
+            </div>
         </div>
 
         <script src="app.js"></script>
