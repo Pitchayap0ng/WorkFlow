@@ -21,11 +21,11 @@
     </head>
     <body class="bg-black text-white h-screen overflow-hidden font-sans">
 
+        <!-- Auth UI -->
         <div id="auth-ui" class="p-8 pt-12 h-full overflow-y-auto">
             <div class="max-w-md mx-auto">
                 <h1
                     class="text-4xl font-bold text-blue-500 text-center mb-10 italic uppercase">IMS-WORKFLOW</h1>
-
                 <div id="login-form" class="space-y-4">
                     <input type="text" id="l-id"
                         placeholder="อีเมล หรือ ชื่อผู้ใช้"
@@ -57,48 +57,39 @@
                         class="time-pill w-full p-4 bg-zinc-900">
                     <input type="tel" id="r-phone" placeholder="เบอร์โทรศัพท์"
                         class="time-pill w-full p-4 bg-zinc-900">
-
                     <select id="r-job"
                         class="time-pill w-full p-4 bg-zinc-900 text-sm opacity-60">
                         <option value="staff">พนักงานทั่วไป (Staff)</option>
                         <option value="delivery">พนักงานส่งของ
                             (Delivery)</option>
                     </select>
-
                     <input type="password" id="r-pw"
                         placeholder="รหัสผ่าน (6 ตัวขึ้นไป)"
                         class="time-pill w-full p-4 bg-zinc-900">
-
-                    <div id="reg-action-area">
-                        <button id="btn-send-otp" onclick="sendOTP()"
+                    <div id="reg-action-area"><button id="btn-send-otp"
+                            onclick="sendOTP()"
                             class="btn-primary w-full py-4 bg-blue-600">รับรหัส
-                            OTP ผ่าน Email</button>
-                    </div>
-
+                            OTP ผ่าน Email</button></div>
                     <div id="otp-section"
                         class="hidden mt-4 pt-4 border-t border-white/10">
                         <p
-                            class="text-[10px] text-orange-400 font-bold uppercase mb-2 text-center italic">
-                            กรุณากรอกรหัส 6 หลักที่ได้รับในอีเมล
-                        </p>
+                            class="text-[10px] text-orange-400 font-bold uppercase mb-2 text-center italic">กรุณากรอกรหัส
+                            6 หลักที่ได้รับในอีเมล</p>
                         <div class="space-y-3">
                             <input type="text" id="r-otp"
                                 placeholder="กรอกรหัส OTP"
                                 class="w-full p-3 bg-zinc-900 border border-blue-500/30 rounded-2xl text-center tracking-[1em] font-bold outline-none focus:ring-1 focus:ring-blue-500">
-
                             <button onclick="doRegister()"
-                                class="btn-primary w-full py-4 text-sm shadow-lg shadow-green-500/20 bg-green-600 hover:bg-green-500">
-                                ยืนยันรหัสและลงทะเบียน
-                            </button>
+                                class="btn-primary w-full py-4 text-sm shadow-lg shadow-green-500/20 bg-green-600 hover:bg-green-500">ยืนยันรหัสและลงทะเบียน</button>
                         </div>
                     </div>
-
                     <button onclick="toggleAuth('login')"
                         class="w-full text-[10px] opacity-40 font-bold uppercase mt-2">ยกเลิก</button>
                 </div>
             </div>
         </div>
 
+        <!-- App UI -->
         <div id="app-ui" class="hidden h-full flex flex-col">
             <main class="flex-1 px-5 pt-12 overflow-y-auto pb-32">
                 <div id="remote-banner"
@@ -127,22 +118,17 @@
                     <div id="rider-card"
                         class="hidden glass-card p-6 mb-8 border-l-4 border-green-500">
                         <div class="flex justify-between items-end">
-                            <div>
-                                <p
-                                    class="text-[10px] opacity-50 uppercase font-bold">บิลวันนี้</p>
-                                <!-- ✅ ID ต้องเป็น today-bills ถึงจะแสดงตัวเลขบิล -->
-                                <h3 class="text-4xl font-bold"
-                                    id="today-bills">0</h3>
-                            </div>
+                            <div><p
+                                    class="text-[10px] opacity-50 uppercase font-bold">บิลวันนี้</p><h3
+                                    class="text-4xl font-bold"
+                                    id="today-bills">0</h3></div>
                             <div class="flex gap-2">
                                 <button onclick="addDelivery(-1)"
-                                    class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center active:scale-90">
-                                    <i class="fa-solid fa-minus"></i>
-                                </button>
+                                    class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center active:scale-90"><i
+                                        class="fa-solid fa-minus"></i></button>
                                 <button onclick="addDelivery(1)"
-                                    class="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center shadow-lg active:scale-90">
-                                    <i class="fa-solid fa-plus"></i>
-                                </button>
+                                    class="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center shadow-lg active:scale-90"><i
+                                        class="fa-solid fa-plus"></i></button>
                             </div>
                         </div>
                     </div>
@@ -164,11 +150,25 @@
                         </button>
                     </div>
 
-                    <div class="mt-12 text-center">
+                    <!-- Live Timer[cite: 5] -->
+                    <div
+                        class="mt-8 p-6 glass-card border-t-2 border-blue-500/30 flex flex-col items-center">
+                        <p
+                            class="text-[10px] opacity-40 font-bold uppercase tracking-[0.2em] mb-2">เวลาทำงานรวมวันนี้</p>
+                        <div id="work-timer"
+                            class="text-4xl font-mono font-bold tracking-wider text-blue-400">00:00:00</div>
+                    </div>
+
+                    <!-- Salary Display[cite: 5] -->
+                    <div class="mt-12 text-center flex flex-col items-center">
                         <p
                             class="text-[10px] opacity-30 font-bold uppercase tracking-widest">เงินเดือนโดยประมาณ</p>
-                        <h1 class="text-5xl font-bold uppercase">฿<span
-                                id="salary-view">0.00</span></h1>
+                        <div class="flex items-baseline justify-center">
+                            <span
+                                class="text-2xl font-bold mr-1 text-white/30">฿</span>
+                            <span id="salary-view"
+                                class="text-6xl font-bold">0.00</span>
+                        </div>
                         <p id="salary-detail"
                             class="text-[10px] opacity-40 mt-2 italic font-medium"></p>
                     </div>

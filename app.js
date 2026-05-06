@@ -7,6 +7,7 @@ const firebaseConfig = {
     storageBucket: "ims-fei.firebasestorage.app",
     appId: "1:791711191329:web:0a4ba03cd5f11eb71bae60"
 };
+
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth(), db = firebase.database();
 
@@ -17,6 +18,7 @@ const auth = firebase.auth(), db = firebase.database();
 
 let currentUser = null, myInfo = {}, targetInfo = {}, logs = [], viewDate = new Date(), adminTargetId = null;
 let generatedOTP = null;
+let timerInterval = null; // ✅ ตัวแปรนับเวลา[cite: 4]
 
 const HOLIDAYS = { "01-01": "ปีใหม่", "04-13": "สงกรานต์", "04-14": "สงกรานต์", "04-15": "สงกรานต์", "05-01": "แรงงาน", "07-28": "วันเฉลิมฯ", "08-12": "วันแม่", "10-13": "วัน ร.9", "12-05": "วันพ่อ", "12-31": "สิ้นปี" };
 
@@ -38,11 +40,93 @@ auth.onAuthStateChanged(user => {
     }
 });
 
+// ✅ 3. Live Timer Logic[cite: 4]
+function handleWorkTimer(log) {
+    if (timerInterval) clearInterval(timerInterval);
+    const display = document.getElementById('work-timer');
+    if (!display) return;
+
+    if (log && log.checkIn && !log.checkOut) {
+        display.classList.add('text-blue-400');
+        display.classList.remove('text-zinc-500');
+        timerInterval = setInterval(() => {
+            const [h, m] = log.checkIn.split(':');
+            const start = new Date();
+            start.setHours(parseInt(h), parseInt(m), 0);
+            const diff = new Date() - start;
+            display.innerText = formatDiff(diff);
+        }, 1000);
+    } else if (log && log.checkIn && log.checkOut) {
+        const [h1, m1] = log.checkIn.split(':');
+        const [h2, m2] = log.checkOut.split(':');
+        const start = new Date(); start.setHours(parseInt(h1), parseInt(m1), 0);
+        const end = new Date(); end.setHours(parseInt(h2), parseInt(m2), 0);
+        display.innerText = formatDiff(end - start);
+        display.classList.replace('text-blue-400', 'text-zinc-500');
+    } else {
+        display.innerText = "00:00:00";
+    }
+}
+
+function formatDiff(ms) {
+    if (ms < 0) ms = 0;
+    let s = Math.floor(ms / 1000);
+    let h = Math.floor(s / 3600);
+    let m = Math.floor((s % 3600) / 60);
+    let sec = s % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+// --- [ MAIN APP LOGIC ] ---
+function initApp() {
+    const tid = adminTargetId || currentUser.uid;
+    db.ref(`users/${tid}`).on('value', s => {
+        targetInfo = s.val() || {};
+        document.getElementById('u-display').innerText = targetInfo.displayName || 'User';
+        document.getElementById('u-photo').src = targetInfo.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        document.getElementById('rider-card').classList.toggle('hidden', targetInfo.jobType !== 'delivery');
+        renderWeekly(targetInfo);
+        calculateSalary();
+    });
+
+    db.ref(`attendance/${tid}`).on('value', s => {
+        const d = s.val();
+        logs = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
+        const today = new Date().toISOString().split('T')[0];
+        const todayLog = logs.find(l => l.date === today);
+        const billDisplay = document.getElementById('today-bills');
+        if (billDisplay) billDisplay.innerText = todayLog ? (todayLog.delivery || 0) : 0;
+
+        handleWorkTimer(todayLog); // ✅ เรียกใช้นาฬิกา[cite: 4]
+        renderCal();
+        calculateSalary();
+    });
+}
+
+// ✅ แทรก handleWorkTimer เข้าไปใน TapIn / TapOut[cite: 4]
+async function tapIn() {
+    const tid = adminTargetId || currentUser.uid;
+    const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
+    if (logs.find(l => l.date === d)) return pushLog("ลงเวลาแล้ว", "warning");
+    const newLog = { date: d, checkIn: t, checkOut: '', isOff: false, delivery: 0 };
+    await db.ref(`attendance/${tid}`).push(newLog);
+    handleWorkTimer(newLog);
+}
+
+async function tapOut() {
+    const tid = adminTargetId || currentUser.uid;
+    const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
+    const log = logs.find(l => l.date === d && !l.checkOut);
+    if (!log) return pushLog("ยังไม่ตอกบัตรเข้า หรือ ออกงานแล้ว", "error");
+    await db.ref(`attendance/${tid}/${log.id}`).update({ checkOut: t });
+    handleWorkTimer({ ...log, checkOut: t });
+}
+
+// --- ฟังก์ชันอื่นๆ ตามต้นฉบับ ห้ามลบ ---[cite: 4]
 async function doLogin() {
     let id = document.getElementById('l-id').value.toLowerCase().trim();
     const pw = document.getElementById('l-pw').value;
     if (!id || !pw) return pushLog("กรุณากรอกข้อมูลให้ครบ", "warning");
-
     if (!id.includes('@')) {
         const s = await db.ref('usernames/' + id).once('value');
         if (s.exists()) id = s.val().email;
@@ -109,30 +193,6 @@ async function forgotPw() {
     }
 }
 
-// --- [ MAIN APP LOGIC ] ---
-function initApp() {
-    const tid = adminTargetId || currentUser.uid;
-    db.ref(`users/${tid}`).on('value', s => {
-        targetInfo = s.val() || {};
-        document.getElementById('u-display').innerText = targetInfo.displayName || 'User';
-        document.getElementById('u-photo').src = targetInfo.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-        document.getElementById('rider-card').classList.toggle('hidden', targetInfo.jobType !== 'delivery'); //[cite: 1]
-        renderWeekly(targetInfo);
-        calculateSalary();
-    });
-
-    db.ref(`attendance/${tid}`).on('value', s => {
-        const d = s.val();
-        logs = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
-        const today = new Date().toISOString().split('T')[0];
-        const todayLog = logs.find(l => l.date === today);
-        const billDisplay = document.getElementById('today-bills');
-        if (billDisplay) billDisplay.innerText = todayLog ? (todayLog.delivery || 0) : 0; //[cite: 2]
-        renderCal();
-        calculateSalary();
-    });
-}
-
 function calculateSalary() {
     const u = targetInfo; const base = (u.salary || 0) / 30; const bRate = u.billRate || 40;
     const m = viewDate.getMonth(), y = viewDate.getFullYear();
@@ -155,28 +215,12 @@ async function addDelivery(v) {
     const log = logs.find(l => l.date === d);
     if (log) {
         const newDelivery = Math.max(0, (log.delivery || 0) + v);
-        await db.ref(`attendance/${tid}/${log.id}`).update({ delivery: newDelivery }); //[cite: 2]
+        await db.ref(`attendance/${tid}/${log.id}`).update({ delivery: newDelivery });
     } else {
         pushLog("ตอกบัตรเข้างานก่อน", "warning");
     }
 }
 
-async function tapIn() {
-    const tid = adminTargetId || currentUser.uid;
-    const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
-    if (logs.find(l => l.date === d)) return pushLog("ลงเวลาแล้ว", "warning");
-    await db.ref(`attendance/${tid}`).push({ date: d, checkIn: t, checkOut: '', isOff: false, delivery: 0 });
-}
-
-async function tapOut() {
-    const tid = adminTargetId || currentUser.uid;
-    const d = new Date().toISOString().split('T')[0], t = new Date().toTimeString().slice(0, 5);
-    const log = logs.find(l => l.date === d);
-    if (!log) return pushLog("ยังไม่ตอกบัตรเข้า", "error");
-    await db.ref(`attendance/${tid}/${log.id}`).update({ checkOut: t });
-}
-
-// --- [ ADMIN & PROFILE FUNCTIONS ] ---
 function loadUserList() {
     db.ref('users').on('value', s => {
         const users = s.val();
@@ -190,22 +234,22 @@ function loadUserList() {
 }
 
 function enterAdminView(id, name) {
-    adminTargetId = id; 
-    document.getElementById('remote-banner').classList.remove('hidden'); 
-    document.getElementById('remote-name').innerText = name; 
-    Swal.fire({ title: 'โหมดจัดการข้อมูล', text: `กำลังเข้าถึงข้อมูลของ: ${name}`, icon: 'info', background: '#1c1c1e', color: '#fff', timer: 1500, showConfirmButton: false }); //[cite: 1]
-    initApp(); go('p-home'); 
+    adminTargetId = id;
+    document.getElementById('remote-banner').classList.remove('hidden');
+    document.getElementById('remote-name').innerText = name;
+    Swal.fire({ title: 'โหมดจัดการข้อมูล', text: `กำลังเข้าถึงข้อมูลของ: ${name}`, icon: 'info', background: '#1c1c1e', color: '#fff', timer: 1500, showConfirmButton: false });
+    initApp(); go('p-home');
 }
 
-function exitAdminView() { 
-    adminTargetId = null; document.getElementById('remote-banner').classList.add('hidden'); initApp(); 
+function exitAdminView() {
+    adminTargetId = null; document.getElementById('remote-banner').classList.add('hidden'); initApp();
 }
 
 async function openEditProfile() {
     const tid = adminTargetId || currentUser.uid;
     const s = await db.ref(`users/${tid}`).once('value');
     const d = s.val() || {};
-    const isAdmin = myInfo.role === 'admin'; //[cite: 1]
+    const isAdmin = myInfo.role === 'admin';
     const isMe = tid === currentUser.uid;
 
     const { value: res } = await Swal.fire({
@@ -258,11 +302,11 @@ async function openEditProfile() {
             const up = { displayName: document.getElementById('e-name').value, phone: document.getElementById('e-phone').value, username: document.getElementById('e-user').value.toLowerCase().trim(), email: document.getElementById('e-email').value.trim() };
             const curPw = document.getElementById('curr-pw')?.value, tempImg = document.getElementById('temp-img').src;
             if (tempImg.startsWith('data:image')) up.photoURL = tempImg;
-            if (isAdmin) { 
-                up.salary = parseFloat(document.getElementById('e-sal').value); 
-                up.billRate = parseFloat(document.getElementById('e-bill').value); 
-                up.jobType = document.getElementById('e-job').value; //[cite: 1]
-                up.role = document.getElementById('e-role').value; //[cite: 1]
+            if (isAdmin) {
+                up.salary = parseFloat(document.getElementById('e-sal').value);
+                up.billRate = parseFloat(document.getElementById('e-bill').value);
+                up.jobType = document.getElementById('e-job').value;
+                up.role = document.getElementById('e-role').value;
             }
             try {
                 if (isMe && (up.email !== d.email)) {
@@ -278,7 +322,6 @@ async function openEditProfile() {
     if (res) { await db.ref(`users/${tid}`).update(res); pushLog("บันทึกสำเร็จ"); }
 }
 
-// --- [ UI HELPERS ] ---
 function renderCal() {
     const y = viewDate.getFullYear(), m = viewDate.getMonth();
     const names = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
@@ -337,7 +380,7 @@ function previewImage(input) {
     }
 }
 function renderWeekly(data) {
-    const names = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+    const names = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
     const weekContainer = document.getElementById('week-list');
     if (!weekContainer) return;
     weekContainer.innerHTML = names.map(d => {
@@ -347,4 +390,14 @@ function renderWeekly(data) {
                 <div class="flex gap-2"><input type="time" class="time-pill py-2 px-3 text-[10px]" value="${s.in}" onchange="updateShift('${d}', 'in', this.value)"><input type="time" class="time-pill py-2 px-3 text-[10px]" value="${s.out}" onchange="updateShift('${d}', 'out', this.value)"></div></div>`;
     }).join('');
 }
+
+function confirmAction(title, callback) {
+    Swal.fire({
+        title: title, icon: 'question', showCancelButton: true,
+        confirmButtonColor: '#3b82f6', cancelButtonColor: '#d33',
+        confirmButtonText: 'ตกลง', cancelButtonText: 'ยกเลิก',
+        background: '#1c1c1e', color: '#fff'
+    }).then((result) => { if (result.isConfirmed) callback(); });
+}
+
 function updateShift(d, k, v) { db.ref(`users/${adminTargetId || currentUser.uid}/shifts/${d}/${k}`).set(v); }

@@ -5,6 +5,7 @@
     -webkit-tap-highlight-color: transparent;
     outline: none;
     touch-action: manipulation;
+    /* ปิดระบบ Double Tap Zoom[cite: 6] */
 }
 
 body {
@@ -42,56 +43,6 @@ body {
     display: block;
 }
 
-/* Animations */
-.slide-up {
-    animation: slideUp 0.6s ease-out;
-}
-
-.slide-in {
-    animation: slideIn 0.5s ease-out;
-}
-
-.bounce-in {
-    animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateX(-20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-@keyframes bounceIn {
-    from {
-        scale: 0.8;
-        opacity: 0;
-    }
-
-    to {
-        scale: 1;
-        opacity: 1;
-    }
-}
-
-/* Calendar Nodes */
 .day-node {
     aspect-ratio: 1;
     border-radius: 14px;
@@ -114,11 +65,6 @@ body {
     opacity: 0.6;
 }
 
-.st-holiday {
-    border: 1px solid #f97316;
-    color: #f97316;
-}
-
 .nav-btn {
     padding: 16px;
     font-size: 22px;
@@ -137,12 +83,12 @@ body {
     border-radius: 18px;
     padding: 14px;
     color: white;
-    transition: 0.3s;
 }
 
-.time-pill:focus {
-    border-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.05);
+#work-timer {
+    text-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+    font-variant-numeric: tabular-nums;
+    /* ป้องกันตัวเลขส่าย[cite: 6] */
 }
 
 ::-webkit-scrollbar {
