@@ -23,6 +23,20 @@
             src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
         <link rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <style>
+        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px; }
+        .time-pill { border-radius: 18px; border: 1px solid rgba(255,255,255,0.1); outline: none; transition: 0.3s; color: white; }
+        .time-pill:focus { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6, #2563eb); border-radius: 18px; font-weight: bold; transition: 0.3s; }
+        .btn-primary:active { transform: scale(0.98); }
+        .nav-btn { color: rgba(255,255,255,0.2); transition: 0.3s; font-size: 1.4rem; }
+        .nav-btn.active { color: #3b82f6; transform: translateY(-5px); }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .day-node.st-normal { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .day-node.st-off { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+    </style>
     </head>
     <body class="bg-black text-white h-screen overflow-hidden font-sans">
 
@@ -205,7 +219,7 @@
                         class="fa-solid fa-calendar-week"></i></button>
                 <button onclick="go('p-cal', this)" class="nav-btn"><i
                         class="fa-solid fa-history"></i></button>
-                <button onclick="confirmAction('ลงชื่อออก?', doLogout)"
+                <button onclick="confirmAction('ลงชื่อออก ?', doLogout)"
                     class="p-4 text-red-500/40"><i
                         class="fa-solid fa-power-off"></i></button>
             </nav>

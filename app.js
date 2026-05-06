@@ -333,8 +333,8 @@ async function editCalendarEntry(dateStr) {
                <input id="sw-out" type="time" class="time-pill w-full mb-2" value="${log?.checkOut || '17:30'}">
                <input id="sw-bill" type="number" class="time-pill w-full" value="${log?.delivery || 0}">`,
         showDenyButton: true,
-        confirmButtonText: 'เซฟ',
-        denyButtonText: 'ลบ'
+        confirmButtonText: 'Save',
+        denyButtonText: 'Delete'
     });
     if (res) {
         const data = {
