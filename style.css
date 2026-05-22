@@ -1,21 +1,48 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --bg: #050505;
+    --card: rgba(255, 255, 255, .05);
+    --card-border: rgba(255, 255, 255, .08);
+    --blue: #3b82f6;
+    --blue-soft: rgba(59, 130, 246, .18);
+    --text-soft: rgba(255, 255, 255, .55);
+}
 
 * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
     font-family: 'Plus Jakarta Sans', sans-serif;
     -webkit-tap-highlight-color: transparent;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    /* เพิ่มความลื่นไหลให้ทุก element */
+}
+
+html {
+    scroll-behavior: smooth;
 }
 
 body {
-    background: #000;
-    color: #fff;
-    margin: 0;
+    background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, .12), transparent 30%),
+        radial-gradient(circle at bottom left, rgba(59, 130, 246, .08), transparent 30%),
+        var(--bg);
+    color: white;
     overflow: hidden;
 }
 
-/* --- [ ANIMATION DEFINITIONS ] --- */
-@keyframes fadeInUp {
+/* =========================
+   SCROLLBAR
+========================= */
+
+::-webkit-scrollbar {
+    width: 0;
+}
+
+/* =========================
+   ANIMATIONS
+========================= */
+
+@keyframes fadeUp {
     from {
         opacity: 0;
         transform: translateY(20px);
@@ -27,157 +54,262 @@ body {
     }
 }
 
-@keyframes scaleIn {
+@keyframes pop {
     from {
-        transform: scale(0.9);
         opacity: 0;
+        transform: scale(.95);
     }
 
     to {
-        transform: scale(1);
         opacity: 1;
+        transform: scale(1);
     }
 }
 
-/* อัปเกรดสไตล์ช่องกรอกข้อมูลให้เป็นกระจกโปร่งแสง */
-.time-pill {
-    background: rgba(255, 255, 255, 0.05) !important;
-    /* เปลี่ยนจากขาวทึบเป็นขาวใส 5% */
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 16px;
-    padding: 12px 16px;
-    color: white !important;
-    outline: none;
-    transition: all 0.3s ease;
-}
+/* =========================
+   PAGE
+========================= */
 
-/* เมื่อกดที่ช่อง ให้มีแสงสีฟ้าเรืองๆ ออกมา */
-.time-pill:focus {
-    background: rgba(255, 255, 255, 0.08) !important;
-    border-color: #3b82f6 !important;
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
-}
-
-/* แก้ไขสีของ Placeholder (ตัวอักษรจางๆ ในช่อง) */
-::placeholder {
-    color: rgba(255, 255, 255, 0.3) !important;
-}
-
-/* สำหรับช่องที่ "อ่านได้อย่างเดียว" (Username/Email) ให้ดูจางลงอีกนิด */
-input[readonly] {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-/* หน้าเดือน: ช่องวันหยุดจะเป็นสีแดงจางๆ */
-.st-off {
-    background: rgba(239, 68, 68, 0.15) !important;
-    /* สีแดง 15% */
-    border: 1px solid rgba(239, 68, 68, 0.3) !important;
-    color: #f87171 !important;
-    /* ตัวเลขสีแดงอ่อน */
-    opacity: 0.7;
-}
-
-/* หน้าเดือน: ช่องทำงานปกติ (สีน้ำเงิน) */
-.st-normal {
-    background: rgba(59, 130, 246, 0.2) !important;
-    border: 1px solid rgba(59, 130, 246, 0.3) !important;
-}
-
-/* --- [ GLASS CARD UPGRADE ] --- */
-.glass-card {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 28px;
-    animation: fadeInUp 0.5s ease-out;
-    /* การ์ดจะค่อยๆ ลอยขึ้นเมื่อโชว์ */
-}
-
-.glass-card:active {
-    transform: scale(0.97);
-}
-
-/* --- [ PAGE TRANSITIONS ] --- */
 .page {
     display: none;
-    animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: fadeUp .45s ease;
 }
 
 .page.active {
     display: block;
 }
 
-/* --- [ BUTTON & INTERACTIVE ] --- */
-.btn-primary {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    border-radius: 20px;
-    font-weight: bold;
-    color: white;
+/* =========================
+   GLASS CARD
+========================= */
+
+.glass-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+
+    border-radius: 28px;
+
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, .35),
+        inset 0 1px 0 rgba(255, 255, 255, .04);
+
+    animation: pop .35s ease;
+}
+
+.glass-card:hover {
+    border-color: rgba(255, 255, 255, .15);
+}
+
+.glass-card:active {
+    transform: scale(.985);
+}
+
+/* =========================
+   INPUT & SELECT (เวอร์ชันจัดกึ่งกลางเป๊ะทั้งระบบ)
+========================= */
+
+.time-pill {
+    display: block;
+    width: 100%;
     border: none;
-    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.2);
+    outline: none;
+
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(255, 255, 255, .06);
+
+    color: white;
+
+    border-radius: 22px;
+
+    /* ล็อกระยะขอบด้วย !important เพื่อเคลียร์ปัญหาคลาส p-4/p-5 ใน HTML ที่ทำให้ขนาดแต่ละหน้าเบี้ยวไม่เท่ากัน */
+    padding: 14px 18px !important;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    /* ควบคุมระดับความสูงของบรรทัดให้พอดี เพื่อดึงตัวอักษรลงมาอยู่กึ่งกลางแนวตั้งเป๊ะๆ ไม่ให้ดูลอย */
+    line-height: 1.5;
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    transition: .25s ease;
+    box-sizing: border-box;
+}
+
+.time-pill:focus {
+    border-color: rgba(59, 130, 246, .6);
+
+    background: rgba(255, 255, 255, .07);
+
+    box-shadow:
+        0 0 0 4px rgba(59, 130, 246, .12),
+        0 10px 25px rgba(59, 130, 246, .12);
+}
+
+::placeholder {
+    color: rgba(255, 255, 255, .28);
+}
+
+/* =========================
+   BUTTON
+========================= */
+
+.btn-primary {
+    border: none;
+    outline: none;
+
+    background:
+        linear-gradient(135deg,
+            #3b82f6,
+            #2563eb);
+
+    color: white;
+
+    font-weight: 700;
+
+    border-radius: 24px;
+
+    box-shadow:
+        0 10px 30px rgba(37, 99, 235, .28);
+
+    transition: .25s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
 }
 
 .btn-primary:active {
-    transform: scale(0.95);
-    box-shadow: 0 5px 10px rgba(59, 130, 246, 0.1);
+    transform: scale(.97);
+
+    box-shadow:
+        0 5px 15px rgba(37, 99, 235, .22);
+}
+
+/* =========================
+   NAVBAR
+========================= */
+
+nav {
+    background: rgba(15, 15, 15, .78) !important;
+
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+
+    border: 1px solid rgba(255, 255, 255, .06);
 }
 
 .nav-btn {
-    padding: 16px;
-    font-size: 22px;
-    color: rgba(255, 255, 255, 0.15);
-    background: none;
-    border: none;
-    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    width: 52px;
+    height: 52px;
+
+    border-radius: 18px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: rgba(255, 255, 255, .25);
+
+    font-size: 20px;
+
+    transition: .3s ease;
 }
 
 .nav-btn.active {
-    color: #3b82f6;
-    transform: translateY(-8px) scale(1.2);
-    /* ปุ่มเมนูที่เลือกจะเด้งขึ้น */
+    color: white;
+
+    background: var(--blue-soft);
+
+    box-shadow:
+        0 10px 25px rgba(59, 130, 246, .18);
+
+    transform: translateY(-5px);
 }
 
-/* --- [ MODAL ANIMATION ] --- */
+/* =========================
+   PROFILE IMAGE
+========================= */
+
+#u-photo {
+    box-shadow:
+        0 10px 30px rgba(59, 130, 246, .18);
+}
+
+/* =========================
+   TIMER
+========================= */
+
+#work-timer {
+    letter-spacing: 2px;
+}
+
+/* =========================
+   CALENDAR
+========================= */
+
+#cal-days div {
+    transition: .2s ease;
+}
+
+#cal-days div:hover {
+    transform: translateY(-2px);
+}
+
+.st-normal {
+    background: rgba(59, 130, 246, .18) !important;
+    border: 1px solid rgba(59, 130, 246, .28);
+}
+
+.st-off {
+    background: rgba(239, 68, 68, .12) !important;
+    border: 1px solid rgba(239, 68, 68, .22);
+    color: #f87171 !important;
+}
+
+/* =========================
+   MODAL
+========================= */
+
 #modal-profile {
-    transition: opacity 0.3s ease;
+    animation: fadeUp .3s ease;
 }
 
-#modal-profile .glass-card {
-    animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+/* =========================
+   MOBILE SAFE AREA
+========================= */
+
+main {
+    padding-bottom: 140px !important;
 }
 
-/* --- [ CALENDAR & LIST DELAY ] --- */
-#week-list>div,
-#user-list>div {
-    animation: fadeInUp 0.4s ease-out backwards;
+/* =========================
+   SOFT TEXT
+========================= */
+
+.opacity-soft {
+    color: var(--text-soft);
 }
 
-/* ใส่ Delay ให้แต่ละแถวค่อยๆ โผล่ตามลำดับ */
-#week-list>div:nth-child(1) {
-    animation-delay: 0.1s;
+@keyframes blink-red {
+    0% {
+        background-color: rgba(239, 68, 68, 0.1);
+    }
+
+    50% {
+        background-color: rgba(239, 68, 68, 0.3);
+    }
+
+    100% {
+        background-color: rgba(239, 68, 68, 0.1);
+    }
 }
 
-#week-list>div:nth-child(2) {
-    animation-delay: 0.15s;
-}
-
-#week-list>div:nth-child(3) {
-    animation-delay: 0.2s;
-}
-
-#week-list>div:nth-child(4) {
-    animation-delay: 0.25s;
-}
-
-#week-list>div:nth-child(5) {
-    animation-delay: 0.3s;
-}
-
-#week-list>div:nth-child(6) {
-    animation-delay: 0.35s;
+.blink-alert {
+    animation: blink-red 1.5s infinite;
+    border: 1px solid rgba(239, 68, 68, 0.5);
 }

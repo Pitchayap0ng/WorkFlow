@@ -5,7 +5,6 @@
         <meta name="viewport"
             content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
         <title>IMS-Workflow Full System</title>
-        <!-- Libraries -->
         <script src="https://cdn.tailwindcss.com"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script
@@ -22,57 +21,59 @@
     </head>
     <body class="bg-black text-white h-screen overflow-hidden">
 
-        <!-- Auth UI -->
-        <div id="auth-ui" class="p-8 pt-12 h-full overflow-y-auto">
-            <div class="max-w-md mx-auto text-center">
+        <div id="auth-ui"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-6 overflow-y-auto">
+            <div class="w-full max-w-md my-auto text-center">
                 <h1
-                    class="text-4xl font-bold text-blue-500 mb-10 italic uppercase">IMS-WORKFLOW</h1>
-                <div id="login-form" class="space-y-4">
+                    class="text-4xl font-bold text-blue-500 mb-10 italic uppercase tracking-wider">IMS-WORKFLOW</h1>
+
+                <div id="login-form" class="space-y-4 block">
                     <input type="text" id="l-id"
                         placeholder="Username หรือ Email"
-                        class="time-pill w-full p-5 bg-zinc-900">
+                        class="time-pill w-full p-5 bg-zinc-900 border border-white/5 focus:outline-none focus:border-blue-500 transition-colors">
                     <input type="password" id="l-pw" placeholder="รหัสผ่าน"
-                        class="time-pill w-full p-5 bg-zinc-900">
-                    <button onclick="doLogin()"
-                        class="btn-primary w-full py-5 text-lg">เข้าสู่ระบบ</button>
+                        class="time-pill w-full p-5 bg-zinc-900 border border-white/5 focus:outline-none focus:border-blue-500 transition-colors">
+                    <button onclick="handleLogin()"
+                        class="btn-primary w-full py-5 text-lg font-bold tracking-wide active:scale-[0.99] transition-transform">เข้าสู่ระบบ</button>
                     <p class="text-xs opacity-50 mt-4 uppercase">ยังไม่มีบัญชี?
                         <button onclick="toggleAuth('reg')"
-                            class="text-blue-500 font-bold">สมัครสมาชิก</button></p>
+                            class="text-blue-500 font-bold hover:underline">สมัครสมาชิก</button></p>
                 </div>
+
                 <div id="reg-form" class="hidden space-y-4">
                     <div id="reg-input-area" class="space-y-4">
                         <input type="text" id="r-name"
                             placeholder="ชื่อ-นามสกุล"
-                            class="time-pill w-full p-4 bg-zinc-900">
+                            class="time-pill w-full p-4 bg-zinc-900 border border-white/5 focus:outline-none focus:border-blue-500">
                         <input type="text" id="r-user" placeholder="Username"
-                            class="time-pill w-full p-4 bg-zinc-900">
+                            class="time-pill w-full p-4 bg-zinc-900 border border-white/5 focus:outline-none focus:border-blue-500">
                         <input type="email" id="r-email" placeholder="Email"
-                            class="time-pill w-full p-4 bg-zinc-900">
+                            class="time-pill w-full p-4 bg-zinc-900 border border-white/5 focus:outline-none focus:border-blue-500">
                         <select id="r-job"
-                            class="time-pill w-full p-4 bg-zinc-900 text-gray-400">
+                            class="time-pill w-full p-4 bg-zinc-900 text-gray-400 border border-white/5 focus:outline-none focus:border-blue-500">
                             <option value="staff">Staff</option>
                             <option value="delivery">Delivery</option>
                         </select>
                         <input type="password" id="r-pw"
                             placeholder="รหัสผ่าน (6 ตัวขึ้นไป)"
-                            class="time-pill w-full p-4 bg-zinc-900">
+                            class="time-pill w-full p-4 bg-zinc-900 border border-white/5 focus:outline-none focus:border-blue-500">
                         <button onclick="sendRegistrationOTP()"
-                            class="btn-primary w-full py-4 bg-blue-600">ส่งรหัสยืนยันไปที่อีเมล</button>
+                            class="btn-primary w-full py-4 bg-blue-600 font-bold active:scale-[0.99] transition-transform">ส่งรหัสยืนยันไปที่อีเมล</button>
                     </div>
+
                     <div id="reg-otp-area"
                         class="hidden space-y-4 pt-4 border-t border-white/10">
                         <input type="text" id="r-otp" placeholder="OTP CODE"
-                            class="time-pill w-full p-4 text-center text-2xl tracking-[0.5em]">
+                            class="time-pill w-full p-4 text-center text-2xl tracking-[0.5em] bg-zinc-900 border border-green-500/30 focus:outline-none focus:border-green-500">
                         <button onclick="verifyAndRegister()"
-                            class="btn-primary w-full py-4 bg-green-600">ยืนยันและสมัครสมาชิก</button>
+                            class="btn-primary w-full py-4 bg-green-600 font-bold active:scale-[0.99] transition-transform">ยืนยันและสมัครสมาชิก</button>
                     </div>
                     <button onclick="toggleAuth('login')"
-                        class="w-full text-[10px] opacity-40 uppercase mt-2">ยกเลิก</button>
+                        class="w-full text-[10px] opacity-40 uppercase mt-2 hover:text-white transition-colors">ยกเลิก</button>
                 </div>
             </div>
         </div>
 
-        <!-- App UI -->
         <div id="app-ui" class="hidden h-full flex flex-col">
             <main class="flex-1 px-5 pt-12 overflow-y-auto pb-32">
                 <div id="remote-banner"
@@ -85,7 +86,6 @@
                         class="bg-white/20 px-4 py-2 rounded-xl text-xs font-bold">EXIT</button>
                 </div>
 
-                <!-- Home Section -->
                 <section id="p-home" class="page active">
                     <div class="flex justify-between items-center mb-8">
                         <div><p
@@ -140,18 +140,50 @@
                     </div>
                 </section>
 
-                <!-- Admin Section -->
-                <section id="p-admin" class="page"><h2
-                        class="text-2xl font-bold mb-6 italic uppercase text-blue-500">Management</h2><div
-                        id="user-list" class="space-y-3"></div></section>
+                <section id="p-admin" class="page">
+                    <h2
+                        class="text-2xl font-bold mb-6 italic uppercase text-blue-500">Management</h2>
 
-                <!-- Schedule Section -->
+                    <div id="user-list" class="space-y-3"></div>
+
+                    <div class="mt-8 pt-6 border-t border-white/10 space-y-4">
+                        <label
+                            class="text-[10px] opacity-40 ml-1 font-bold uppercase tracking-wider block">
+                            <i
+                                class="fa-solid fa-shield-halved mr-1 text-blue-400"></i>
+                            Security & Audit Control
+                        </label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="viewSecurityLogs()"
+                                class="py-4 px-4 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 rounded-2xl text-xs font-bold active:scale-95 transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-list-check text-sm"></i>
+                                ตรวจสอบ LOGS
+                            </button>
+                            <button onclick="changeAdminPin()"
+                                class="py-4 px-4 bg-zinc-900 hover:bg-zinc-800/80 border border-white/10 text-white rounded-2xl text-xs font-bold active:scale-95 transition flex items-center justify-center gap-2">
+                                <i
+                                    class="fa-solid fa-key text-sm text-yellow-500"></i>
+                                เปลี่ยนรหัสลับแอดมิน
+                            </button>
+                        </div>
+                        <div id="blocked-user-list" class="space-y-2 mt-4">
+                        </div>
+                        <script>
+        // เรียกฟังก์ชันโหลดข้อมูลเมื่อหน้าเว็บโหลดเสร็จ
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof renderBlockedStaffList === 'function') {
+                renderBlockedStaffList();
+            }
+        });
+    </script>
+                    </div>
+                </section>
+
                 <section id="p-week" class="page"><h2
                         class="text-2xl font-bold mb-6 italic uppercase">My
-                        Schedule</h2><div id="week-list"
-                        class="space-y-3"></div></section>
+                        Schedule</h2><div
+                        id="week-list" class="space-y-3"></div></section>
 
-                <!-- Calendar Section -->
                 <section id="p-cal" class="page">
                     <div class="flex justify-between items-center mb-6"><h2
                             id="mon-view"
@@ -161,136 +193,129 @@
                                     class="fa-solid fa-chevron-left"></i></button><button
                                 onclick="moveMonth(1)"><i
                                     class="fa-solid fa-chevron-right"></i></button></div></div>
-                    <div
-                        class="grid grid-cols-7 gap-2 text-center text-[10px] font-bold opacity-40 mb-2"><div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div></div>
-                    <div id="cal-days" class="grid grid-cols-7 gap-2"></div>
+                    <div id="cal-days"
+                        class="grid grid-cols-7 gap-2 text-center text-[10px] font-bold"></div>
                 </section>
             </main>
 
-            <!-- Navbar -->
             <nav
-                class="fixed bottom-8 left-6 right-6 glass-card p-3 flex justify-around items-center shadow-2xl z-50">
-                <button onclick="go('p-home', this)" class="nav-btn active"><i
-                        class="fa-solid fa-house"></i></button>
-                <button id="nav-admin" onclick="go('p-admin', this)"
-                    class="nav-btn hidden"><i
-                        class="fa-solid fa-users-gear"></i></button>
-                <button onclick="go('p-week', this)" class="nav-btn"><i
-                        class="fa-solid fa-calendar-week"></i></button>
-                <button onclick="go('p-cal', this)" class="nav-btn"><i
-                        class="fa-solid fa-history"></i></button>
-                <button onclick="confirmAction('ลงชื่อออก ?', doLogout)"
-                    class="p-4 text-red-500/40"><i
-                        class="fa-solid fa-power-off"></i></button>
+                class="fixed bottom-0 inset-x-0 bg-zinc-950/80 backdrop-blur-xl border-t border-white/5 p-4 flex justify-around items-center z-40 max-w-md mx-auto rounded-t-3xl shadow-2xl">
+                <button onclick="go('p-home', this)"
+                    class="nav-btn active flex flex-col items-center gap-1 text-zinc-500 transition-colors"><i
+                        class="fa-solid fa-house-chimney text-lg"></i><span
+                        class="text-[9px] font-bold tracking-wider uppercase">Home</span></button>
+                <button id="nav-admin"
+                    onclick="go('p-admin', this); loadUserList();"
+                    class="nav-btn hidden flex flex-col items-center gap-1 text-zinc-500 transition-colors"><i
+                        class="fa-solid fa-user-gear text-lg"></i><span
+                        class="text-[9px] font-bold tracking-wider uppercase">Admin</span></button>
+                <button onclick="go('p-week', this)"
+                    class="nav-btn flex flex-col items-center gap-1 text-zinc-500 transition-colors"><i
+                        class="fa-solid fa-calendar-week text-lg"></i><span
+                        class="text-[9px] font-bold tracking-wider uppercase">Schedule</span></button>
+                <button onclick="go('p-cal', this)"
+                    class="nav-btn flex flex-col items-center gap-1 text-zinc-500 transition-colors"><i
+                        class="fa-solid fa-calendar-days text-lg"></i><span
+                        class="text-[9px] font-bold tracking-wider uppercase">Calendar</span></button>
+                <button onclick="handleLogout()"
+                    class="nav-btn flex flex-col items-center gap-1 text-red-500 opacity-80 hover:opacity-100 active:scale-95 transition-all">
+                    <i class="fa-solid fa-right-from-bracket text-lg"></i>
+                    <span
+                        class="text-[9px] font-bold tracking-wider">LOGOUT</span>
+                </button>
+
             </nav>
         </div>
 
-        <!-- Modal Profile -->
-        <div id="modal-profile"
-            class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+        <div id="profile-modal"
+            class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex flex-col justify-end">
             <div
-                class="glass-card w-full max-w-md max-h-[90vh] overflow-y-auto p-8 border-white/10 shadow-2xl relative">
-
-                <!-- Header & Close Button -->
-                <div class="flex justify-between items-center mb-8">
-                    <h3 class="text-2xl font-bold text-blue-400">Settings</h3>
+                class="bg-zinc-950 border-t border-white/10 rounded-t-[2.5rem] p-6 max-h-[90vh] overflow-y-auto max-w-md mx-auto w-full shadow-2xl">
+                <div
+                    class="flex justify-between items-center mb-8 pb-4 border-b border-white/5">
+                    <div><h3 class="text-xl font-bold">Edit Profile</h3><p
+                            class="text-[10px] opacity-40 uppercase font-bold mt-0.5">พนักงานสารสนเทศระบบ</p></div>
                     <button onclick="closeProfileModal()"
-                        class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10 transition-all">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
+                        class="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center active:scale-90 transition-transform"><i
+                            class="fa-solid fa-xmark"></i></button>
                 </div>
 
-                <!-- Profile Image Section -->
-                <div class="mb-8 flex flex-col items-center">
-                    <div class="relative group">
-                        <div
-                            class="absolute inset-0 bg-blue-500 blur-2xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                        <img id="edit-photo-preview"
-                            class="relative w-28 h-28 rounded-[2.5rem] object-cover border-4 border-blue-500 shadow-2xl transition-transform group-hover:scale-105">
-                        <label
-                            class="absolute -bottom-2 -right-2 bg-blue-600 w-10 h-10 rounded-2xl flex items-center justify-center cursor-pointer active:scale-90 transition-transform shadow-lg border-4 border-[#121212]">
-                            <i class="fa-solid fa-camera text-white"></i>
-                            <input type="file" id="img-input" class="hidden"
-                                accept="image/*"
-                                onchange="previewProfileImage(this)">
-                        </label>
-                    </div>
-                    <input type="hidden" id="edit-photo">
-                    <p
-                        class="text-[10px] uppercase tracking-widest font-bold opacity-30 mt-4">Tap
-                        camera to change photo</p>
-                </div>
-
-                <!-- Input Fields -->
-                <div class="space-y-5">
-                    <!-- Username & Email (Read Only) -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1">
-                            <label
-                                class="text-[10px] uppercase font-bold opacity-40 ml-1">Username</label>
-                            <input type="text" id="edit-user"
-                                class="time-pill w-full text-xs opacity-60"
-                                readonly>
-                        </div>
-                        <div class="space-y-1">
-                            <label
-                                class="text-[10px] uppercase font-bold opacity-40 ml-1">Email</label>
-                            <input type="email" id="edit-email"
-                                class="time-pill w-full text-xs opacity-60"
-                                readonly>
-                        </div>
-                    </div>
-
-                    <!-- Password Field (Highlighting) -->
+                <div class="space-y-6">
                     <div
-                        class="p-5 bg-white/5 rounded-[2rem] border border-white/5 shadow-inner">
-                        <label
-                            class="text-[10px] uppercase font-bold text-blue-400 ml-1 mb-2 block">Change
-                            Password</label>
-                        <input type="password" id="edit-pw"
-                            class="time-pill w-full bg-black/20 border-white/5 placeholder:text-white/20"
-                            placeholder="••••••••">
-                    </div>
-
-                    <!-- Display Name -->
-                    <div class="space-y-1">
-                        <label
-                            class="text-[10px] uppercase font-bold text-blue-400 ml-1">Display
-                            Name</label>
-                        <input type="text" id="edit-name"
-                            class="time-pill w-full bg-white/5 border-white/10">
-                    </div>
-
-                    <!-- Admin Only Section -->
-                    <div id="admin-only-settings"
-                        class="hidden space-y-4 pt-6 mt-6 border-t border-white/10">
-                        <div class="flex items-center gap-2 mb-2">
-                            <i
-                                class="fa-solid fa-shield-halved text-blue-500 text-xs"></i>
-                            <p
-                                class="text-[10px] font-bold text-blue-500 tracking-tighter uppercase">Admin
-                                Privileges</p>
+                        class="flex items-center gap-5 bg-white/5 p-4 rounded-3xl border border-white/5">
+                        <div class="relative group">
+                            <img id="edit-photo-preview"
+                                class="w-20 h-20 rounded-2xl object-cover bg-zinc-900 border border-white/10">
+                            <label
+                                class="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                                <i class="fa-solid fa-camera text-sm"></i>
+                                <input type="file" accept="image/*"
+                                    class="hidden"
+                                    onchange="previewProfileImage(this)">
+                            </label>
                         </div>
+                        <div class="flex-1 space-y-1.5">
+                            <label
+                                class="text-[10px] opacity-40 font-bold uppercase block ml-1">Photo
+                                Base64 URL</label>
+                            <input type="text" id="edit-photo"
+                                class="time-pill w-full text-xs bg-black/40 border-white/5"
+                                readonly>
+                        </div>
+                    </div>
 
+                    <div class="space-y-4">
                         <div class="grid grid-cols-2 gap-4">
                             <div class="space-y-1">
                                 <label
-                                    class="text-[9px] opacity-40 ml-1 font-bold uppercase">Salary</label>
+                                    class="text-[9px] opacity-40 ml-1 font-bold uppercase">Username</label>
+                                <input type="text" id="edit-user"
+                                    class="time-pill w-full text-xs bg-white/5 border-white/10 opacity-50"
+                                    readonly>
+                            </div>
+                            <div class="space-y-1">
+                                <label
+                                    class="text-[9px] opacity-40 ml-1 font-bold uppercase">Email
+                                    Address</label>
+                                <input type="text" id="edit-email"
+                                    class="time-pill w-full text-xs bg-white/5 border-white/10 opacity-50"
+                                    readonly>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <label
+                                class="text-[9px] opacity-40 ml-1 font-bold uppercase">Display
+                                Name</label>
+                            <input type="text" id="edit-name"
+                                class="time-pill w-full text-xs bg-white/5 border-white/10">
+                        </div>
+
+                        <div class="space-y-1">
+                            <label
+                                class="text-[9px] opacity-40 ml-1 font-bold uppercase">New
+                                Password (เปลี่ยนรหัสผ่าน)</label>
+                            <input type="password" id="edit-pw"
+                                placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยน"
+                                class="time-pill w-full text-xs bg-white/5 border-white/10">
+                        </div>
+
+                        <div id="admin-fields"
+                            class="hidden pt-4 border-t border-white/5 grid grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label
+                                    class="text-[9px] opacity-40 ml-1 font-bold uppercase">Base
+                                    Salary (บาท)</label>
                                 <input type="number" id="edit-salary"
-                                    class="time-pill w-full text-sm"
-                                    placeholder="0">
+                                    class="time-pill w-full text-xs bg-white/5 border-white/10">
                             </div>
                             <div class="space-y-1">
                                 <label
                                     class="text-[9px] opacity-40 ml-1 font-bold uppercase">Bill
-                                    Rate</label>
+                                    Rate (บาท/บิล)</label>
                                 <input type="number" id="edit-bill-rate"
-                                    class="time-pill w-full text-sm"
-                                    placeholder="0">
+                                    class="time-pill w-full text-xs bg-white/5 border-white/10">
                             </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
                             <div class="space-y-1">
                                 <label
                                     class="text-[9px] opacity-40 ml-1 font-bold uppercase">Job
@@ -319,8 +344,7 @@
                     </div>
                 </div>
 
-                <!-- Action Button -->
-                <div class="pt-10">
+                <div class="pt-10 space-y-3">
                     <button onclick="saveProfile()"
                         class="w-full py-5 btn-primary font-bold text-sm tracking-widest active:scale-[0.98] transition-transform">
                         SAVE CHANGES
