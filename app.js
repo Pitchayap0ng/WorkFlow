@@ -191,6 +191,65 @@ async function renderUserList() {
     }
 }
 
+async function showUserLocation(uid) {
+    if (!uid) return;
+
+    // แสดงสถานะ "กำลังโหลด..."
+    Swal.fire({
+        title: 'กำลังตรวจสอบตำแหน่ง...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    try {
+        // 1. ดึงข้อมูลตำแหน่งใหม่สดๆ จาก API
+        const response = await fetch('https://ipapi.co/json/');
+        const data = await response.json();
+
+        // 2. อัปเดตข้อมูลตำแหน่งปัจจุบันลง Database ของพนักงานคนนั้นทันที
+        const newLocationData = {
+            city: data.city,
+            region: data.region,
+            country_name: data.country_name,
+            latitude: data.latitude,
+            longitude: data.longitude
+        };
+
+        await db.ref(`users/${uid}`).update({
+            lastLocation: newLocationData,
+            lastIp: data.ip,
+            lastLoginTime: firebase.database.ServerValue.TIMESTAMP
+        });
+
+        // 3. แสดงผลข้อมูลที่อัปเดตแล้ว
+        const locationText = [data.city, data.region, data.country_name].filter(Boolean).join(', ');
+        const mapLink = (data.latitude && data.longitude)
+            ? `https://www.google.com/maps/search/?api=1&query=${data.latitude},${data.longitude}`
+            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationText)}`;
+
+        Swal.fire({
+            title: `📍 อัปเดตตำแหน่งล่าสุดสำเร็จ`,
+            html: `
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; text-align: left; font-size: 13px; color: #ddd;">
+                    <p><b>🌍 พื้นที่:</b> ${locationText}</p>
+                    <p><b>🌐 IP:</b> ${data.ip}</p>
+                </div>
+                <a href="${mapLink}" target="_blank" 
+                   style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 20px; padding: 12px; background: #3b82f6; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                   <i class="fa-solid fa-map-location-dot"></i> เปิดในแผนที่
+                </a>
+            `,
+            background: '#151517',
+            color: '#fff',
+            confirmButtonText: 'ปิด'
+        });
+
+    } catch (error) {
+        console.error("Error refreshing location:", error);
+        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถอัปเดตตำแหน่งได้ในขณะนี้', 'error');
+    }
+}
+
 async function handleLogin() {
     const input = document.getElementById('l-id').value.trim();
     const password = document.getElementById('l-pw').value;
@@ -449,6 +508,15 @@ function previewProfileImage(input) {
     }
 }
 
+// ฟังก์ชันสร้างปุ่มดูตำแหน่งที่ปลอดภัย
+function createLocationButton(uid) {
+    const btn = document.createElement('button');
+    btn.className = "px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 text-[10px] font-bold rounded-lg border border-blue-500/30 transition-all ml-2";
+    btn.innerHTML = '📍 ดูตำแหน่ง';
+    btn.onclick = () => showUserLocation(uid); // ใช้ Arrow function ผูกค่า uid ไว้
+    return btn;
+}
+
 // ตัวอย่างฟังก์ชันโหลดรายชื่อพนักงานในหน้า Management 
 function loadUsersManagement() {
     db.ref('users').on('value', snapshot => {
@@ -674,8 +742,9 @@ function renderWeekly(u) {
     }
 }
 
+// ตรวจสอบให้แน่ใจว่าฟังก์ชันนี้อยู่นอกสุดของไฟล์ app.js
 function loadUserList() {
-    // 🔒 ป้องกันไว้ก่อน: ถ้าไม่ใช่ admin ห้ามเรียกข้อมูลเด็ดขาด ป้องกัน PERMISSION_DENIED
+    // 🔒 ป้องกัน: ถ้าไม่ใช่ admin ห้ามเรียกข้อมูล
     if (!myInfo || myInfo.role !== 'admin') {
         console.warn("Access denied: loadUserList is for admin only.");
         return;
@@ -685,22 +754,100 @@ function loadUserList() {
         const users = s.val();
         const container = document.getElementById('user-list');
         if (!container || !users) return;
-        container.innerHTML = '';
+
+        container.innerHTML = ''; // ล้างค่าเก่า
+
         Object.keys(users).forEach(uid => {
             const u = users[uid];
-            container.innerHTML += `
-             <div onclick="viewUser('${uid}')" class="glass-card p-4 flex items-center gap-4 cursor-pointer active:scale-95 transition-transform">
-                 <img src="${u.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="w-12 h-12 rounded-2xl object-cover border border-white/10">
-                 <div class="flex-1">
-                     <p class="font-bold text-sm">${u.displayName || u.username}</p>
-                     <p class="text-[10px] opacity-40 uppercase">${u.jobType || 'staff'} | ${u.role || 'user'}</p>
-                 </div>
-                 <i class="fa-solid fa-chevron-right opacity-20 text-xs"></i>
-             </div>`;
+
+            const div = document.createElement('div');
+            div.className = "glass-card p-4 flex items-center gap-4 cursor-pointer active:scale-95 transition-transform";
+            div.onclick = () => viewUser(uid);
+
+            div.innerHTML = `
+                <img src="${u.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="w-12 h-12 rounded-2xl object-cover border border-white/10">
+                <div class="flex-1">
+                    <p class="font-bold text-sm">${u.displayName || u.username}</p>
+                    <p class="text-[10px] opacity-40 uppercase">${u.jobType || 'staff'} | ${u.role || 'user'}</p>
+                </div>
+            `;
+
+            const btnLocation = document.createElement('button');
+            btnLocation.className = "px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 text-[10px] font-bold rounded-lg border border-blue-500/30 transition-all ml-2";
+            btnLocation.innerHTML = '📍 ดูตำแหน่ง';
+
+            btnLocation.onclick = (e) => {
+                e.stopPropagation();
+                showUserLocation(uid);
+            };
+
+            div.appendChild(btnLocation);
+            container.appendChild(div);
         });
     }).catch(error => {
         console.error("loadUserList error:", error);
     });
+}
+
+async function showUserLocation(uid) {
+    if (!uid) return;
+
+    try {
+        const snap = await db.ref(`users/${uid}`).once('value');
+        const userData = snap.val();
+        if (!userData) return Swal.fire('ไม่พบข้อมูล', 'ไม่มีข้อมูลพนักงาน', 'error');
+
+        // ข้อมูลตำแหน่ง
+        const locInfo = userData.lastLocation;
+        let locationText = 'ไม่ระบุตำแหน่ง';
+        let mapLink = "https://www.google.com/maps"; // ลิงก์สำรอง
+
+        if (locInfo) {
+            // ถ้า locInfo เป็น Object (ตามที่คุณเคยบอกว่าเจอปัญหา)
+            if (typeof locInfo === 'object') {
+                const city = locInfo.city || '';
+                const region = locInfo.region || '';
+                const country = locInfo.country_name || '';
+                locationText = [city, region, country].filter(Boolean).join(', ');
+
+                // ตรวจสอบว่ามีพิกัด Lat/Long หรือไม่
+                if (locInfo.latitude && locInfo.longitude) {
+                    // ใช้ Lat, Long เพื่อความแม่นยำสูง
+                    mapLink = `https://www.google.com/maps/search/?api=1&query=${locInfo.latitude},${locInfo.longitude}`;
+                } else if (locationText !== '') {
+                    // ถ้าไม่มีพิกัด ใช้ชื่อเมืองค้นหา
+                    mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationText)}`;
+                }
+            } else {
+                locationText = locInfo;
+                mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locInfo)}`;
+            }
+        }
+
+        // แสดงผล
+        Swal.fire({
+            title: `<div style="font-size: 16px;">📍 พิกัดล่าสุด: ${userData.displayName || 'พนักงาน'}</div>`,
+            html: `
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; text-align: left; font-size: 13px; color: #ddd; margin-top: 10px;">
+                    <p><b>🌍 พื้นที่:</b> ${locationText}</p>
+                    <p style="margin-top: 5px;"><b>🌐 IP:</b> ${userData.lastIp || 'ไม่ระบุ'}</p>
+                    <p style="margin-top: 5px;"><b>🕒 เวลา:</b> ${userData.lastLoginTime ? new Date(userData.lastLoginTime).toLocaleString('th-TH') : 'ไม่ระบุ'}</p>
+                </div>
+                <a href="${mapLink}" target="_blank" 
+                   style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 20px; padding: 12px; background: #3b82f6; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                   <i class="fa-solid fa-map-location-dot"></i> เปิดในแอปแผนที่
+                </a>
+            `,
+            background: '#151517',
+            color: '#fff',
+            confirmButtonText: 'ปิด',
+            confirmButtonColor: '#444'
+        });
+
+    } catch (error) {
+        console.error("Error fetching location:", error);
+        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถดึงข้อมูลตำแหน่งได้', 'error');
+    }
 }
 
 function viewUser(uid) {
